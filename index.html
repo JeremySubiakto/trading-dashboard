@@ -318,6 +318,32 @@
       .bt-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
       .paper-note { padding: 0 14px 12px; font-size: 11px; color: var(--subtle); line-height: 1.5; }
 
+      /* Source color coding: teal = SUBIAKTO engine, blue = TradingView */
+      .panel.src-mine, details.guide.src-mine { border-top: 3px solid var(--up); }
+      .panel.src-tv { border-top: 3px solid var(--accent); }
+      .src-badge {
+        font-size: 9px; font-weight: 800; letter-spacing: .8px; padding: 2px 7px;
+        border-radius: 4px; color: #fff; vertical-align: 2px; margin-left: 8px;
+      }
+      .src-b-mine { background: var(--up); }
+      .src-b-tv { background: var(--accent); }
+      .src-legend {
+        display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+        font-size: 11.5px; color: var(--muted); padding: 0 2px 12px;
+      }
+      .src-legend .key { display: inline-flex; align-items: center; gap: 6px; }
+      .src-legend .bar { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+
+      /* Simple view */
+      .sv-steps { margin: 8px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.7; }
+      .sv-steps li { margin-bottom: 4px; }
+      .sv-block { margin-top: 12px; font-size: 13px; line-height: 1.65; }
+      .sv-block .h { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--subtle); font-weight: 700; margin-bottom: 3px; }
+      .sv-bottom {
+        margin-top: 14px; padding: 10px 12px; border-radius: 9px; font-size: 13.5px;
+        font-weight: 600; background: var(--panel); border: 1px solid var(--border);
+      }
+
       .pos { color: var(--up); font-weight: 700; }
       .neg { color: var(--down); font-weight: 700; }
       .neu { color: var(--muted); font-weight: 600; }
@@ -377,10 +403,16 @@
         <button class="iconbtn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme"></button>
       </header>
 
+      <!-- Source legend -->
+      <div class="src-legend">
+        <span class="key"><span class="bar" style="background:var(--up)"></span> SUBIAKTO engine: scoring, plans, projections, backtests computed on this page</span>
+        <span class="key"><span class="bar" style="background:var(--accent)"></span> TradingView: charts and market data feeds</span>
+      </div>
+
       <!-- Today's briefing -->
-      <section class="panel" id="briefing">
+      <section class="panel src-mine" id="briefing">
         <div class="panel-head">
-          <h2>Today’s briefing — plain &amp; simple</h2>
+          <h2>Today’s briefing<span class="src-badge src-b-mine">SUBIAKTO</span></h2>
           <span style="display:flex;align-items:center;gap:10px">
             <span class="q-updated" id="q-updated">loading…</span>
             <button class="refresh" id="q-refresh">↻ Refresh</button>
@@ -393,18 +425,18 @@
 
       <!-- Portfolio + Radar -->
       <div class="duo">
-        <section class="panel" id="portfolio">
+        <section class="panel src-mine" id="portfolio">
           <div class="panel-head">
-            <h2>My portfolio — live PnL</h2>
-            <span class="sub">Saved on this device · marks to market live</span>
+            <h2>My portfolio<span class="src-badge src-b-mine">SUBIAKTO</span></h2>
+            <span class="sub">Live PnL · saved on this device only</span>
           </div>
           <div id="pf-body"><div class="q-loading">Loading…</div></div>
           <div id="alerts-host"></div>
         </section>
-        <section class="panel" id="radar">
+        <section class="panel src-mine" id="radar">
           <div class="panel-head">
-            <h2>Opportunity radar</h2>
-            <span class="sub" id="radar-sub">Every market scored 0–100 · click a row to open it</span>
+            <h2>Opportunity radar<span class="src-badge src-b-mine">SUBIAKTO</span></h2>
+            <span class="sub" id="radar-sub">Every market scored 0 to 100 · click a row to open it</span>
           </div>
           <div class="panel-body" style="overflow-x:auto" id="radar-body">
             <div class="q-loading">Scanning…</div>
@@ -413,11 +445,11 @@
       </div>
 
       <!-- Paper trading scoreboard -->
-      <section class="panel" id="paper">
+      <section class="panel src-mine" id="paper">
         <div class="panel-head">
-          <h2>Paper trading — signal scoreboard</h2>
+          <h2>Paper trading scoreboard<span class="src-badge src-b-mine">SUBIAKTO</span></h2>
           <span style="display:flex;align-items:center;gap:10px">
-            <span class="sub">Every BUY / SHORT signal the radar fires is logged and tracked automatically — no money involved</span>
+            <span class="sub">Every BUY or SHORT signal the radar fires is logged and tracked, with no money involved</span>
             <button class="refresh" id="paper-clear" title="Delete all recorded signals">Clear</button>
           </span>
         </div>
@@ -428,29 +460,30 @@
       <div class="chips" id="chips"></div>
 
       <!-- Symbol info strip -->
-      <div class="panel" style="margin-bottom:12px">
+      <div class="panel src-tv" style="margin-bottom:12px">
         <div class="tv-host" id="info" style="height:170px"></div>
       </div>
 
       <!-- Main: chart + technicals -->
       <div class="main">
-        <section class="panel" style="margin-bottom:0">
-          <div class="panel-head"><h2>Chart</h2><span class="sub">Daily candles · EMA &amp; RSI preloaded · use ranges below</span></div>
+        <section class="panel src-tv" style="margin-bottom:0">
+          <div class="panel-head"><h2>Chart<span class="src-badge src-b-tv">TRADINGVIEW</span></h2><span class="sub">Follows your timeframe · EMA and RSI preloaded</span></div>
           <div class="panel-body"><div class="tv-host" id="chart" style="height:560px"></div></div>
         </section>
-        <section class="panel" style="margin-bottom:0">
-          <div class="panel-head"><h2>Technicals</h2><span class="sub">Community buy/sell gauge</span></div>
+        <section class="panel src-tv" style="margin-bottom:0">
+          <div class="panel-head"><h2>Technicals<span class="src-badge src-b-tv">TRADINGVIEW</span></h2><span class="sub">Community buy/sell gauge</span></div>
           <div class="panel-body"><div class="tv-host" id="ta" style="height:560px"></div></div>
         </section>
       </div>
 
       <!-- Quant Lab -->
-      <section class="panel" id="quant">
+      <section class="panel src-mine" id="quant">
         <div class="panel-head" style="flex-wrap:wrap">
-          <h2>Quant Lab · deep analysis</h2>
+          <h2>Quant Lab<span class="src-badge src-b-mine">SUBIAKTO</span></h2>
           <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="tfseg" id="view-seg" title="Simple view explains the position in plain language; Technical view has every number"></span>
             <span class="tf-hold" id="tf-hold"></span>
-            <span class="tfseg" id="tf-seg" title="Trading timeframe — entries, stops, take profits and projections all recompute for this horizon"></span>
+            <span class="tfseg" id="tf-seg" title="Trading timeframe: entries, stops, take profits and projections all recompute for this horizon"></span>
             <span class="sub" id="quant-sub">for the selected symbol</span>
           </span>
         </div>
@@ -460,53 +493,53 @@
       </section>
 
       <!-- Beginner guide -->
-      <details class="guide">
+      <details class="guide src-mine">
         <summary>New to trading? Read this first (2 minutes)</summary>
         <div class="g-body">
           <h4>The only 3 rules that matter</h4>
-          <b style="color:var(--text)">1. Never risk more than 1% of your money on one trade.</b> Use the position-size calculator in the Quant Lab — it does the math for you.<br />
+          <b style="color:var(--text)">1. Never risk more than 1% of your money on one trade.</b> Use the position-size calculator in the Quant Lab. It does the math for you.<br />
           <b style="color:var(--text)">2. Decide your exit before you enter.</b> Every trade plan here comes with a stop loss. If price hits it, you sell. No "maybe it comes back."<br />
           <b style="color:var(--text)">3. Never add money to a losing trade.</b> Averaging down feels smart and is the #1 account killer.
 
-          <h4>Swing vs. Invest — which are you doing?</h4>
-          <b style="color:var(--text)">Swing</b> = renting a stock for 2–6 weeks to catch a move. You live by the stop loss.
-          <b style="color:var(--text)">Invest</b> = marrying it for years because you believe in the business. You buy slowly (DCA) and ignore the noise.
-          Decide before you buy — most losses come from swings that turn into accidental "investments."
+          <h4>Swing vs. Invest, which are you doing?</h4>
+          <b style="color:var(--text)">Swing</b> means renting a position for two to six weeks to catch a move. You live by the stop loss.
+          <b style="color:var(--text)">Invest</b> means holding for years because you believe in the asset. You buy slowly and ignore the noise.
+          Decide before you buy, most losses come from swings that turn into accidental "investments."
 
           <h4>How to read the colors</h4>
-          <span class="dot" style="background:var(--up);display:inline-block"></span> <b style="color:var(--text)">Buy zone</b> — a real setup exists, with entry/stop/targets. ·
-          <span class="dot" style="background:var(--warn);display:inline-block"></span> <b style="color:var(--text)">Wait</b> — promising but not confirmed. ·
-          <span class="dot" style="background:#5a6273;display:inline-block"></span> <b style="color:var(--text)">Range</b> — sideways, skip it. ·
-          <span class="dot" style="background:var(--down);display:inline-block"></span> <b style="color:var(--text)">Avoid</b> — still falling; cheap can get cheaper.
+          <span class="dot" style="background:var(--up);display:inline-block"></span> <b style="color:var(--text)">Buy zone</b>, a real setup exists, with entry/stop/targets. ·
+          <span class="dot" style="background:var(--warn);display:inline-block"></span> <b style="color:var(--text)">Wait</b>, promising but not confirmed. ·
+          <span class="dot" style="background:#5a6273;display:inline-block"></span> <b style="color:var(--text)">Range</b>, sideways, skip it. ·
+          <span class="dot" style="background:var(--down);display:inline-block"></span> <b style="color:var(--text)">Avoid</b>, still falling; cheap can get cheaper.
 
           <h4>Quick glossary</h4>
           <div class="gloss">
-            <div><b>PnL</b> — profit and loss. "Unrealized" = on paper; "realized" = you actually sold.</div>
-            <div><b>Stop loss</b> — the price where you admit you're wrong and sell. Set it BEFORE buying.</div>
-            <div><b>RSI</b> — momentum meter 0–100. Above 70 = maybe too hot; below 30 = beaten up.</div>
-            <div><b>EMA</b> — moving average, the trend line. Price above rising EMAs = healthy.</div>
-            <div><b>ATR</b> — how much it typically moves per day. Sets how wide your stop must be.</div>
-            <div><b>ADX</b> — trend strength. Above 25 = real trend; below 20 = choppy mess.</div>
-            <div><b>R</b> — your risk unit (entry − stop). Target 1 = you make 1.5× what you risked.</div>
-            <div><b>Drawdown</b> — worst drop from a peak. Crypto regularly does −50%. Size accordingly.</div>
-            <div><b>Lot</b> — IDX stocks trade in lots of 100 shares.</div>
-            <div><b>DCA</b> — buying a fixed amount monthly regardless of price. The investor's tool.</div>
+            <div><b>PnL</b>, profit and loss. "Unrealized" = on paper; "realized" = you actually sold.</div>
+            <div><b>Stop loss</b>, the price where you admit you're wrong and sell. Set it BEFORE buying.</div>
+            <div><b>RSI</b>, a momentum meter from 0 to 100. Above 70 means it may be overheated; below 30 means it has been beaten up.</div>
+            <div><b>EMA</b>, moving average, the trend line. Price above rising EMAs = healthy.</div>
+            <div><b>ATR</b>, how much it typically moves per day. Sets how wide your stop must be.</div>
+            <div><b>ADX</b>, trend strength. Above 25 = real trend; below 20 = choppy mess.</div>
+            <div><b>R</b>, your risk unit (entry − stop). Target 1 = you make 1.5× what you risked.</div>
+            <div><b>Drawdown</b>, worst drop from a peak. Crypto regularly does −50%. Size accordingly.</div>
+            <div><b>Lot</b>, IDX stocks trade in lots of 100 shares.</div>
+            <div><b>DCA</b>, buying a fixed amount monthly regardless of price. The investor's tool.</div>
           </div>
         </div>
       </details>
 
       <!-- Lower: watchlist + news + calendar -->
       <div class="lower">
-        <section class="panel" style="margin-bottom:0">
-          <div class="panel-head"><h2>Watchlist</h2><span class="sub">Indonesia · Crypto · US · Forex</span></div>
+        <section class="panel src-tv" style="margin-bottom:0">
+          <div class="panel-head"><h2>Watchlist<span class="src-badge src-b-tv">TRADINGVIEW</span></h2><span class="sub">Indonesia · Crypto · US · Forex</span></div>
           <div class="panel-body"><div class="tv-host" id="market" style="height:460px"></div></div>
         </section>
-        <section class="panel" style="margin-bottom:0">
-          <div class="panel-head"><h2>News</h2><span class="sub" id="news-sub">Headlines</span></div>
+        <section class="panel src-tv" style="margin-bottom:0">
+          <div class="panel-head"><h2>News<span class="src-badge src-b-tv">TRADINGVIEW</span></h2><span class="sub" id="news-sub">Headlines</span></div>
           <div class="panel-body"><div class="tv-host" id="news" style="height:460px"></div></div>
         </section>
-        <section class="panel" style="margin-bottom:0">
-          <div class="panel-head"><h2>Economic calendar</h2><span class="sub">US · EU · ID · JP · GB · CN</span></div>
+        <section class="panel src-tv" style="margin-bottom:0">
+          <div class="panel-head"><h2>Economic calendar<span class="src-badge src-b-tv">TRADINGVIEW</span></h2><span class="sub">US · EU · ID · JP · GB · CN</span></div>
           <div class="panel-body"><div class="tv-host" id="calendar" style="height:460px"></div></div>
         </section>
       </div>
@@ -514,7 +547,7 @@
       <footer>
         Charts &amp; data by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>;
         crypto candles by Binance public data. IDX quotes may be delayed on free feeds.
-        Portfolio data lives only in your browser (localStorage) — nothing is uploaded anywhere.<br />
+        Portfolio data lives only in your browser (localStorage); nothing is uploaded anywhere.<br />
         This dashboard analyzes and monitors; order execution happens at your broker / exchange.
         Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto.
       </footer>
@@ -534,12 +567,13 @@
       let TF = saved.tf || '1D';
       let FEEPCT = saved.feePct ?? 0.15;  // broker/exchange fee, % per side
       let SLIPPCT = saved.slipPct ?? 0.05; // slippage + spread, % per side
+      let VIEW = saved.view || 'simple';   // 'simple' explains the position; 'tech' shows every number
 
       /** Round-trip cost as a fraction of price (both sides, fees + slippage). */
       const costFrac = () => 2 * (FEEPCT + SLIPPCT) / 100;
 
       function persist() {
-        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT, tf: TF, feePct: FEEPCT, slipPct: SLIPPCT })); } catch {}
+        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT, tf: TF, feePct: FEEPCT, slipPct: SLIPPCT, view: VIEW })); } catch {}
       }
 
       /* Price alerts: fire while the tab is open (checked on each 90s scan). */
@@ -565,19 +599,19 @@
       const TF_CONFIG = {
         '15':  { label: '15m', suffix: '|15',  chart: '15',  ta: '15m', binance: '15m', barsPerYear: 35040,
                  projBars: 32, projLabel: 'next 8 hours', quarters: ['2h', '4h', '6h', '8h'],
-                 style: 'SCALP', hold: 'Scalp — minutes to a few hours', barName: '15-minute' },
+                 style: 'SCALP', hold: 'Scalp: minutes to a few hours', barName: '15-minute' },
         '60':  { label: '1h',  suffix: '|60',  chart: '60',  ta: '1h',  binance: '1h',  barsPerYear: 8760,
                  projBars: 48, projLabel: 'next 2 days', quarters: ['12h', '1 day', '36h', '2 days'],
-                 style: 'DAY TRADE', hold: 'Day trade — hours to a day', barName: 'hourly' },
+                 style: 'DAY TRADE', hold: 'Day trade: hours to a day', barName: 'hourly' },
         '240': { label: '4h',  suffix: '|240', chart: '240', ta: '4h',  binance: '4h',  barsPerYear: 2190,
                  projBars: 42, projLabel: 'next week', quarters: ['~2 days', '~3.5 days', '~5 days', '7 days'],
-                 style: 'SHORT SWING', hold: 'Short swing — 1 to 5 days', barName: '4-hour' },
+                 style: 'SHORT SWING', hold: 'Short swing: 1 to 5 days', barName: '4-hour' },
         '1D':  { label: '1D',  suffix: '',     chart: 'D',   ta: '1D',  binance: '1d',  barsPerYear: 365,
                  projBars: 28, projLabel: 'next 4 weeks', quarters: ['1W', '2W', '3W', '4W'],
-                 style: 'SWING', hold: 'Swing — 2 to 6 weeks', barName: 'daily' },
+                 style: 'SWING', hold: 'Swing: 2 to 6 weeks', barName: 'daily' },
         '1W':  { label: '1W',  suffix: '|1W',  chart: 'W',   ta: '1W',  binance: '1w',  barsPerYear: 52,
                  projBars: 26, projLabel: 'next 6 months', quarters: ['6W', '3M', '4.5M', '6M'],
-                 style: 'INVEST', hold: 'Invest — months to years', barName: 'weekly' },
+                 style: 'INVEST', hold: 'Invest: months to years', barName: 'weekly' },
       };
       const tfc = () => TF_CONFIG[TF];
 
@@ -743,12 +777,12 @@
       /* ------------------------------------------------------------------ *
        * Live data engine                                                    *
        * ------------------------------------------------------------------ */
-      /* Calendar-based context columns — always daily, never suffixed. */
+      /* Calendar-based context columns, always daily, never suffixed. */
       const BASE_COLS = [
         'close','change','Perf.W','Perf.1M','Perf.3M','Perf.6M','Perf.YTD','Perf.Y',
         'Volatility.M','price_52_week_high','price_52_week_low','volume',
       ];
-      /* Indicator columns — computed on the selected timeframe via |suffix. */
+      /* Indicator columns, computed on the selected timeframe via |suffix. */
       const TA_COLS = [
         'RSI','MACD.macd','MACD.signal','EMA20','EMA50','EMA200','ADX','ATR',
         'Recommend.All','BB.upper','BB.lower',
@@ -905,7 +939,7 @@
         }));
         return {
           bands, H, pT1: touchT1 / N, pStop: touchStop / N, pT1First: t1First / N,
-          method: `Bootstrap Monte Carlo — 1,500 paths resampled from ${rets.length.toLocaleString()} real ${barName} returns. Touch probabilities are path-based (counted along each simulated path).`,
+          method: `Bootstrap Monte Carlo: 1,500 paths resampled from ${rets.length.toLocaleString()} real ${barName} returns. Touch probabilities are path-based (counted along each simulated path).`,
         };
       }
 
@@ -923,13 +957,13 @@
           bands.push(b);
         }
         const sT = sd * Math.sqrt(H);
-        // Touch probability of a level via reflection principle — works both sides of spot.
+        // Touch probability of a level via reflection principle, works both sides of spot.
         const pTouch = (lvl) => Math.min(1, lvl < spot
           ? 2 * normCdf(Math.log(lvl / spot) / sT)
           : 2 * (1 - normCdf(Math.log(lvl / spot) / sT)));
         return {
           bands, H, pT1: pTouch(t1), pStop: pTouch(stop), pT1First: null,
-          method: `Parametric model (driftless GBM); per-${barName}-bar volatility derived from the ${barName} ATR (range ≈ 1.6 sigma). An approximation — touch probabilities use the reflection principle; treat as rough bands.`,
+          method: `Parametric model (driftless GBM); per-${barName}-bar volatility derived from the ${barName} ATR (range ≈ 1.6 sigma). An approximation, touch probabilities use the reflection principle; treat as rough bands.`,
         };
       }
 
@@ -979,12 +1013,12 @@
           ${proj.pT1First != null ? `<div class="h-cell"><div class="lab">P(TP before Stop)</div><div class="val num">${Math.round(proj.pT1First * 100)}%</div></div>` : ''}`;
         return `
           <div>
-            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Projection — ${cfg.projLabel} on the ${cfg.label} timeframe (model, not a promise)</h3>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Projection: ${cfg.projLabel} on the ${cfg.label} timeframe (model, not a promise)</h3>
             <div class="q-card" style="padding:10px 12px">${fanSVG(proj, spot, proj._stop, proj._t1, cfg.quarters)}</div>
             <div class="horiz" style="margin-top:8px">${rows}${probs}</div>
             <div style="font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.5">
               <b>Model:</b> ${proj.method} The shaded areas are where price lands in 50% (dark) and 90% (light) of scenarios.
-              If P(hit Stop) is higher than P(TP before Stop), the trade math is against you — skip it.
+              If P(hit Stop) is higher than P(TP before Stop), the trade math is against you. Skip it.
             </div>
           </div>`;
       }
@@ -1219,12 +1253,12 @@
 
       function verdictOf(sc, s) {
         const above200 = s.close > s.EMA200;
-        if (sc.total >= 70 && s.ADX >= 20) return { label: 'SWING — BUY ZONE', short: 'BUY ZONE', cls: 'v-green', b: 'b-green', kind: 'buy' };
-        if (sc.total >= 55) return { label: 'SWING — WAIT FOR TRIGGER', short: 'WAIT', cls: 'v-amber', b: 'b-amber', kind: 'wait' };
-        if (sc.total >= 40) return { label: 'NEUTRAL — RANGE ONLY', short: 'RANGE', cls: 'v-gray', b: 'b-gray', kind: 'range' };
+        if (sc.total >= 70 && s.ADX >= 20) return { label: 'SWING · BUY ZONE', short: 'BUY ZONE', cls: 'v-green', b: 'b-green', kind: 'buy' };
+        if (sc.total >= 55) return { label: 'SWING · WAIT FOR TRIGGER', short: 'WAIT', cls: 'v-amber', b: 'b-amber', kind: 'wait' };
+        if (sc.total >= 40) return { label: 'NEUTRAL · RANGE ONLY', short: 'RANGE', cls: 'v-gray', b: 'b-gray', kind: 'range' };
         return above200
-          ? { label: 'WEAK — REDUCE / WATCH', short: 'WEAK', cls: 'v-gray', b: 'b-gray', kind: 'weak' }
-          : { label: 'AVOID LONGS — DOWNTREND', short: 'AVOID', cls: 'v-red', b: 'b-red', kind: 'avoid' };
+          ? { label: 'WEAK · REDUCE / WATCH', short: 'WEAK', cls: 'v-gray', b: 'b-gray', kind: 'weak' }
+          : { label: 'AVOID LONGS · DOWNTREND', short: 'AVOID', cls: 'v-red', b: 'b-red', kind: 'avoid' };
       }
 
       /**
@@ -1237,19 +1271,19 @@
         if (scS.total >= 70 && s.ADX >= 20 && scS.total > scL.total) {
           return {
             dir: 'short', sc: scS, other: scL,
-            verdict: { label: 'SWING — SHORT SETUP', short: 'SHORT', cls: 'v-short', b: 'b-short', kind: 'short' },
+            verdict: { label: 'SWING · SHORT SETUP', short: 'SHORT', cls: 'v-short', b: 'b-short', kind: 'short' },
           };
         }
         return { dir: 'long', sc: scL, other: scS, verdict: verdictOf(scL, s) };
       }
 
       const SIMPLE_TERMS = {
-        buy: '<b>In plain terms:</b> the wind is at your back — this is rising with real strength. You may buy, but only with the stop loss set below. No stop, no trade.',
-        wait: '<b>In plain terms:</b> promising, but not proven yet. Let it show strength first (the trigger below) — missing the first 2% is cheaper than catching a fake move.',
-        range: '<b>In plain terms:</b> price is going sideways, like a car stuck in traffic. Skip it — there are better uses of your money and attention.',
-        weak: '<b>In plain terms:</b> the long-term trend is still OK but it’s losing steam. If you own it, tighten your exit. If you don’t own it — no rush at all.',
-        avoid: '<b>In plain terms:</b> this is still falling. Buying now is catching a falling knife — it looks cheap, then gets cheaper. Wait until it stops falling first.',
-        short: '<b>In plain terms:</b> this is falling with real strength — the setup is to profit from the fall (a short). Shorting requires a margin or futures account and is riskier than buying. If you cannot short (IDX retail accounts mostly cannot), read this as: stay out, or exit longs.',
+        buy: '<b>In plain terms:</b> the trend is with you. You can buy, but set the stop loss first. No stop, no trade.',
+        wait: '<b>In plain terms:</b> promising but not proven. Wait for the trigger below. Missing the first 2% is cheaper than buying a fake move.',
+        range: '<b>In plain terms:</b> price is drifting sideways. Skip it. Your money has better places to be.',
+        weak: '<b>In plain terms:</b> the long-term trend is intact but tired. If you own it, tighten your exit. If you do not, there is no rush.',
+        avoid: '<b>In plain terms:</b> it is still falling. It looks cheap, and it can get cheaper. Wait for the fall to stop first.',
+        short: '<b>In plain terms:</b> it is falling hard, so the trade here is to profit from the fall (a short). That needs a margin or futures account and carries extra risk. IDX retail accounts mostly cannot short, so there this simply means: stay out, or exit what you hold.',
       };
       const VERDICT_COLOR = { buy: 'var(--up)', wait: 'var(--warn)', range: '#5a6273', weak: '#5a6273', avoid: 'var(--down)', short: '#8e5bd1' };
 
@@ -1311,8 +1345,8 @@
         if (gold) { votes++; if (gold['Perf.1M'] < 0) riskOn++; }
         const ratio = votes ? riskOn / votes : 0.5;
         if (ratio >= 0.75) return { label: 'RISK-ON', color: 'var(--up)', note: 'Tailwind for stocks & crypto' };
-        if (ratio <= 0.25) return { label: 'RISK-OFF', color: 'var(--down)', note: 'Defensive — smaller positions' };
-        return { label: 'MIXED', color: 'var(--warn)', note: 'Selective — follow the trend, size down' };
+        if (ratio <= 0.25) return { label: 'RISK-OFF', color: 'var(--down)', note: 'Defensive, smaller positions' };
+        return { label: 'MIXED', color: 'var(--warn)', note: 'Selective, follow the trend, size down' };
       }
 
       /* ------------------------------------------------------------------ *
@@ -1376,7 +1410,7 @@
         const tps = closed.filter((s) => s.status === 'tp');
         const totalR = closed.reduce((s, x) => s + (x.netR || 0), 0);
         if (!sigs.length) {
-          host.innerHTML = '<div class="pf-empty">No signals recorded yet. When the radar flips any market to BUY or SHORT on the timeframe you are viewing, it gets logged here automatically with its entry, stop and take-profit — and tracked to the end. Come back in a few days and you will see how honest the signals really are.</div>';
+          host.innerHTML = '<div class="pf-empty">No signals recorded yet. When the radar flips any market to BUY or SHORT on the timeframe you are viewing, it gets logged here automatically with its entry, stop and take-profit, and tracked to the end. Come back in a few days and you will see how honest the signals really are.</div>';
           return;
         }
         const chip = (lab, val, cls = '') => `<div class="pf-chip"><div class="lab">${lab}</div><div class="val num ${cls}">${val}</div></div>`;
@@ -1409,7 +1443,7 @@
                 <td style="color:var(--subtle)">${age(s.t)}</td>
               </tr>`).join('')}
             </tbody></table></div>
-          <div class="paper-note">Signals are recorded on the timeframe you are viewing when they fire, at the scan price (90s granularity, closes only — no intrabar fills). Net R includes your fee + slippage settings. This is the honest scoreboard: if it cannot make paper money, it will not make real money.</div>`;
+          <div class="paper-note">Signals are recorded on the timeframe you are viewing when they fire, at the scan price (90s granularity, closes only, no intrabar fills). Net R includes your fee + slippage settings. This is the honest scoreboard: if it cannot make paper money, it will not make real money.</div>`;
         host.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => setSymbol(el.dataset.open)));
       }
 
@@ -1442,7 +1476,7 @@
           { id: 'a' + Date.now() + 't', sym, level: plan.t1, dir: isShort ? 'below' : 'above', label: 'TP1', fired: false, t: Date.now() },
         );
         saveAlerts(a);
-        notify('Alerts armed — ' + shortSym(sym), `Entry ${fmtPrice(isShort ? plan.entryLow : plan.entryHigh)} · Stop ${fmtPrice(plan.stop)} · TP1 ${fmtPrice(plan.t1)}`);
+        notify('Alerts armed, ' + shortSym(sym), `Entry ${fmtPrice(isShort ? plan.entryLow : plan.entryHigh)} · Stop ${fmtPrice(plan.stop)} · TP1 ${fmtPrice(plan.t1)}`);
         renderAlerts();
       }
       function checkAlerts(scan) {
@@ -1455,7 +1489,7 @@
           const hit = a.dir === 'above' ? q.close >= a.level : q.close <= a.level;
           if (hit) {
             a.fired = true; a.firedAt = Date.now(); changed = true;
-            notify(`${a.label} — ${shortSym(a.sym)}`, `Price ${fmtPrice(q.close)} crossed ${fmtPrice(a.level)} (${a.dir})`);
+            notify(`${a.label}, ${shortSym(a.sym)}`, `Price ${fmtPrice(q.close)} crossed ${fmtPrice(a.level)} (${a.dir})`);
           }
         }
         if (changed) saveAlerts(alerts);
@@ -1468,11 +1502,11 @@
         const permLine = perm === 'granted'
           ? '<span style="color:var(--up)">browser notifications on</span>'
           : perm === 'denied'
-            ? '<span style="color:var(--warn)">notifications blocked — in-page toasts only</span>'
+            ? '<span style="color:var(--warn)">notifications blocked, in-page toasts only</span>'
             : `<button class="refresh" id="alerts-enable">Enable browser notifications</button>`;
         host.innerHTML = `
           <div class="alerts-box">
-            <h4>Price alerts (while this tab is open) — ${permLine}</h4>
+            <h4>Price alerts (while this tab is open), ${permLine}</h4>
             ${alerts.length ? alerts.map((a) => `
               <div class="alert-row ${a.fired ? 'fired' : ''}">
                 <span style="font-weight:700">${shortSym(a.sym)}</span>
@@ -1481,7 +1515,7 @@
                 <span style="color:var(--subtle);font-size:11px">${a.fired ? 'fired' : 'armed'}</span>
                 <button class="xbtn" data-del="${a.id}" style="margin-left:auto">Remove</button>
               </div>`).join('') : '<div style="font-size:12px;color:var(--subtle)">No alerts armed. Use the button in the trade plan to arm entry / stop / TP1 for the selected market.</div>'}
-            <div style="font-size:11px;color:var(--subtle);margin-top:6px">Checked every 90 seconds against scan prices. Not a substitute for a real stop order at your broker.</div>
+            <div style="font-size:11px;color:var(--subtle);margin-top:6px">Checked every 90 seconds against scan prices. This does not replace a real stop order at your broker.</div>
           </div>`;
         const en = document.getElementById('alerts-enable');
         if (en) en.addEventListener('click', () => Notification.requestPermission().then(renderAlerts));
@@ -1539,7 +1573,7 @@
             <div class="pf-chip"><div class="lab">Today</div><div class="val ${clsPct(v.dayIDR)}">${fmtIDRsigned(v.dayIDR)}</div></div>
             <div class="pf-chip" title="A 1-in-20 bad week could cost roughly this much. Range: uncorrelated vs fully correlated positions.">
               <div class="lab">1W VaR 95% (est.)</div>
-              <div class="val" style="color:var(--warn)">${fmtIDR(varLo)}${varHi > varLo * 1.05 ? ' – ' + fmtIDR(varHi) : ''}</div></div>
+              <div class="val" style="color:var(--warn)">${fmtIDR(varLo)}${varHi > varLo * 1.05 ? ' to ' + fmtIDR(varHi) : ''}</div></div>
           </div>` : '';
 
         const table = pf.positions.length ? `
@@ -1559,15 +1593,15 @@
                 </tr>`).join('')}
             </tbody>
           </table></div>
-          ${v.missing.length ? `<div class="pf-note">⚠ No live quote for: ${v.missing.join(', ')} — excluded from totals.</div>` : ''}`
-        : `<div class="pf-empty">No positions yet. Add what you own below — e.g. <b>IDX:BBCA</b>, qty <b>500</b> (5 lot), entry <b>5600</b> —
+          ${v.missing.length ? `<div class="pf-note">⚠ No live quote for: ${v.missing.join(', ')}, excluded from totals.</div>` : ''}`
+        : `<div class="pf-empty">No positions yet. Add what you own below, e.g. <b>IDX:BBCA</b>, qty <b>500</b> (5 lot), entry <b>5600</b>,
              and this page will track your live profit &amp; loss in Rupiah, updating every 90 seconds.<br><br>
              Crypto works too: <b>BINANCE:BTCUSDT</b>, qty <b>0.015</b>, entry in USD.</div>`;
 
         const closedTotal = (pf.closed || []).reduce((s, c) => s + (c.realizedIDR || 0), 0);
         const closedLog = (pf.closed || []).length ? `
           <details class="closed-log">
-            <summary>Closed trades — realized PnL: <span class="num ${clsPct(closedTotal)}">${fmtIDRsigned(closedTotal)}</span></summary>
+            <summary>Closed trades, realized PnL: <span class="num ${clsPct(closedTotal)}">${fmtIDRsigned(closedTotal)}</span></summary>
             ${pf.closed.slice().reverse().map((c) => `
               <div class="row num"><span>${shortSym(c.sym)} · ${c.qty} @ ${fmtPrice(c.entry)} → ${fmtPrice(c.exit)}</span>
               <span class="${clsPct(c.realizedIDR)}">${fmtIDRsigned(c.realizedIDR)}</span></div>`).join('')}
@@ -1645,7 +1679,7 @@
         document.querySelectorAll('#radar-body [data-open]').forEach((el) =>
           el.addEventListener('click', () => setSymbol(el.dataset.open)));
         document.getElementById('radar-sub').textContent =
-          `All markets scored 0–100 on the ${tfc().label} timeframe · click a row to open it`;
+          `All markets scored 0 to 100 on the ${tfc().label} timeframe · click a row to open it`;
         return rows;
       }
 
@@ -1656,7 +1690,7 @@
         'Nobody catches the exact bottom. Aim for the middle 60% of a move.',
         'Red days in a downtrend are normal. Green days in a downtrend are traps more often than turns.',
         'Your edge is patience. The market pays those who wait for their setup.',
-        'Check USD/IDR before buying Indonesian banks — foreign flows drive them.',
+        'Foreign flows drive Indonesian banks, so check USD/IDR before buying them.',
         'Take profits at targets. Unrealized gains are the market’s money, not yours yet.',
       ];
 
@@ -1670,43 +1704,43 @@
         if (regime.label === 'RISK-OFF') {
           macroTxt = 'Big money is playing defense right now (strong dollar, weak markets). Trade smaller than usual and be extra picky.';
         } else if (regime.label === 'RISK-ON') {
-          macroTxt = 'Money is flowing into risky assets. Good conditions — but still use stops; conditions change fast.';
+          macroTxt = 'Money is flowing into risky assets. Good conditions, but still use stops; conditions change fast.';
         } else {
-          macroTxt = 'Signals are mixed — some markets up, some down. Stick to the strongest names only and keep positions small.';
+          macroTxt = 'Signals are mixed, some markets up, some down. Stick to the strongest names only and keep positions small.';
         }
-        if (idr && idr['Perf.1M'] > 0.5) macroTxt += ` Rupiah is weakening (USD/IDR ${fmtPrice(idr.close)}, ${fmtPct(idr['Perf.1M'])} this month) — that pressures Indonesian stocks, especially banks.`;
-        else if (idr && idr['Perf.1M'] < -0.5) macroTxt += ` Rupiah is strengthening — a tailwind for Indonesian stocks.`;
-        if (idx && idx['Perf.1M'] < -5) macroTxt += ` The IDX index is down ${fmtPct(idx['Perf.1M'])} this month — this is a bear market; bounces are not the same as recoveries.`;
+        if (idr && idr['Perf.1M'] > 0.5) macroTxt += ` Rupiah is weakening (USD/IDR ${fmtPrice(idr.close)}, ${fmtPct(idr['Perf.1M'])} this month), which pressures Indonesian stocks, banks most of all.`;
+        else if (idr && idr['Perf.1M'] < -0.5) macroTxt += ` The rupiah is strengthening, which helps Indonesian stocks.`;
+        if (idx && idx['Perf.1M'] < -5) macroTxt += ` The IDX index is down ${fmtPct(idx['Perf.1M'])} this month. That is a bear market, and a bounce is not a recovery.`;
         const regimeColor = regime.label === 'RISK-ON' ? 'var(--up)' : regime.label === 'RISK-OFF' ? 'var(--down)' : 'var(--warn)';
         items.push({ tag: 'MACRO', color: regimeColor, tt: `Market mood: ${regime.label}`, tx: macroTxt });
 
         const top = radarRows.find((r) => r.score >= 55);
         if (top && top.dir === 'short') {
           items.push({ tag: 'SHORT', color: '#8e5bd1', tt: `Strongest setup right now is a SHORT: ${top.disp} (score ${top.score}/100)`,
-            tx: `Falling with real strength (${fmtPct(top.perfW)} this week). Shorting needs a margin/futures account — if you cannot short, this is simply a market to stay out of. Click it in the radar for the full plan.` });
+            tx: `Falling with real strength (${fmtPct(top.perfW)} this week). Shorting needs a margin/futures account, if you cannot short, this is simply a market to stay out of. Click it in the radar for the full plan.` });
         } else if (top) {
           items.push({ tag: 'SETUP', color: 'var(--accent)', tt: `Healthiest chart right now: ${top.disp} (score ${top.score}/100)`,
-            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan and projection.` });
+            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this one. Click it in the radar for the plan and the projection.` });
         } else {
           items.push({ tag: 'CASH', color: '#5a6273', tt: 'No strong setups today',
-            tx: 'Nothing scores above 55/100 in the radar. The smartest trade is often no trade — keeping your cash safe IS a position.' });
+            tx: 'Nothing scores above 55/100 in the radar. No trade is also a position, and often the best one.' });
         }
 
         const avoid = radarRows.filter((r) => r.score < 40).slice(-3).map((r) => r.disp);
         if (avoid.length) {
           items.push({ tag: 'AVOID', color: 'var(--down)', tt: `Stay away from: ${avoid.join(', ')}`,
-            tx: 'These are still in falling trends. "It’s cheap now" is how people lose money in downtrends — cheap can always get cheaper.' });
+            tx: 'These are still in falling trends. "It’s cheap now" is how people lose money in downtrends, cheap can always get cheaper.' });
         }
 
         if (pfValue && pfValue.rows.length) {
           const worst = [...pfValue.rows].sort((a, b) => a.pnlPct - b.pnlPct)[0];
           let tx = `Total ${fmtIDR(pfValue.totalIDR)} · today ${fmtIDRsigned(pfValue.dayIDR)}.`;
-          if (worst && worst.pnlPct < -8) tx += ` Biggest drag: ${shortSym(worst.sym)} (${fmtPct(worst.pnlPct)}). Ask yourself the honest question — would you buy it again today? If not, why are you still holding it?`;
+          if (worst && worst.pnlPct < -8) tx += ` Biggest drag: ${shortSym(worst.sym)} (${fmtPct(worst.pnlPct)}). Would you buy it again today? If not, ask why you still hold it.`;
           else tx += ' No position needs emergency attention. Check the radar before adding anything new.';
           items.push({ tag: 'P&L', color: pfValue.pnlIDR >= 0 ? 'var(--up)' : 'var(--warn)', tt: `Your PnL: ${fmtIDRsigned(pfValue.pnlIDR)} (${fmtPct(pfValue.pnlPct)})`, tx });
         } else {
           items.push({ tag: 'P&L', color: '#5a6273', tt: 'Track your real PnL here',
-            tx: 'Add what you actually own in “My portfolio” below (symbol, amount, entry price). This page will then mark it to market live and tell you exactly where you stand — in Rupiah.' });
+            tx: 'Add what you actually own in “My portfolio” below (symbol, amount, entry price). This page will then mark it to market live and tell you exactly where you stand, in Rupiah.' });
         }
 
         const dayIdx = Math.floor(Date.now() / 86_400_000) % DAILY_TIPS.length;
@@ -1717,10 +1751,11 @@
       }
 
       function renderQuantPanel(scan, klines, usdidr) {
+        window.__lastQuant = [scan, klines, usdidr];
         const body = document.getElementById('q-body');
         const s = scan[SYMBOL];
         if (!s || s.close == null) {
-          body.innerHTML = '<div class="q-loading">No scanner data for ' + SYMBOL + ' — try another symbol.</div>';
+          body.innerHTML = '<div class="q-loading">No scanner data for ' + SYMBOL + ', try another symbol.</div>';
           return;
         }
         const cfg = tfc();
@@ -1752,25 +1787,133 @@
           : s.close < s.EMA20 && s.EMA20 < s.EMA50 && s.EMA50 < s.EMA200 ? 'Strong downtrend (inverted EMAs)'
           : 'Below 200-EMA (long-term broken)';
         const investLine = s['Perf.6M'] >= 0 && s.close > ema200Daily
-          ? '<b style="color:var(--up)">Invest: OK to DCA</b> — long-term trend intact (above the daily 200-EMA, positive 6M).'
+          ? '<b style="color:var(--up)">Invest: OK to DCA.</b> The long-term trend is intact: above the one-year trend line with positive six-month momentum.'
           : s.close > ema200Daily
-            ? '<b style="color:var(--warn)">Invest: careful</b> — above the daily 200-EMA but 6-month momentum negative; DCA slowly.'
-            : '<b style="color:var(--down)">Invest: falling knife</b> — below the daily 200-EMA. Waiting for it to reclaim that line costs you a little upside and saves you a lot of pain.';
+            ? '<b style="color:var(--warn)">Invest: careful.</b> The long-term trend line still holds, but six-month momentum is negative. If you buy, buy slowly.'
+            : '<b style="color:var(--down)">Invest: falling knife.</b> Price is below its one-year trend line. Waiting for that line to be reclaimed costs a little upside and saves a lot of pain.';
         const tfNote = s._tfFallback
-          ? `<div style="margin-top:8px;font-size:11.5px;color:var(--warn)">Note: no ${cfg.label} data for this market on the free feed — indicators shown are daily.</div>`
+          ? `<div style="margin-top:8px;font-size:11.5px;color:var(--warn)">Note: this market has no ${cfg.label} data on the free feed, so the indicators shown are daily.</div>`
           : '';
+
+        /* Backtest is shared by both views (crypto only: needs candle history). */
+        const bt = klines && klines.length >= 260 ? backtest(klines, costFrac(), cfg) : null;
+
+        /* ---------------- Simple view ---------------- */
+        if (VIEW === 'simple') {
+          const stackedUp = s.close > s.EMA20 && s.EMA20 > s.EMA50 && s.EMA50 > s.EMA200;
+          const stackedDown = s.close < s.EMA20 && s.EMA20 < s.EMA50 && s.EMA50 < s.EMA200;
+          const trendS = stackedUp
+            ? 'Price sits above its short, medium and long trend lines, which is what a healthy uptrend looks like.'
+            : stackedDown
+              ? 'Price sits below its short, medium and long trend lines, which is what an established downtrend looks like.'
+              : s.close > s.EMA200
+                ? 'The long-term trend is still up, but the shorter trend lines have flattened out.'
+                : 'The long-term trend line is broken and price is still searching for a base.';
+          const rsiV = s.RSI ?? 50;
+          const momS = rsiV > 70 ? 'Buying has been frantic lately, which often precedes a pause.'
+            : rsiV >= 65 ? 'Momentum is strong.'
+            : rsiV >= 45 ? 'Momentum is steady.'
+            : rsiV >= 30 ? 'Momentum is soft.'
+            : 'Selling has been heavy and the asset is oversold.';
+          const regimeS = regime.label === 'RISK-OFF'
+            ? 'The market backdrop is defensive right now (strong dollar, weak equity markets), which argues for smaller positions.'
+            : regime.label === 'RISK-ON'
+              ? 'The market backdrop currently favors risk assets.'
+              : 'The market backdrop is mixed, so be selective.';
+          const kindLead = {
+            buy: 'The setup is valid. Here is the structure:',
+            wait: `Not yet. If you want in, wait for the trigger: a ${cfg.barName} close above ${fmtPrice(s.EMA20)}. If that happens, the structure is:`,
+            range: 'There is no edge here. For reference only, the structure would be:',
+            weak: 'New money has no reason to enter here. If you already hold it, the reference structure is:',
+            avoid: `The model says do not buy. The level that changes the picture is ${fmtPrice(s.EMA200)}. Above that, come back and look again. For reference, the structure would be:`,
+            short: 'The setup is a short: you profit if it keeps falling. The structure:',
+          }[verdict.kind];
+          const t1pct = (plan.t1 / plan.entry - 1) * 100;
+          const t2pct = (plan.t2 / plan.entry - 1) * 100;
+          const lossPct = (plan.riskPerUnit / plan.entry) * 100;
+          const riskIDR = MODAL * RISKPCT / 100;
+          const rpuIDR = isIDX(SYMBOL) ? plan.riskPerUnit : usdidr ? plan.riskPerUnit * usdidr : null;
+          let sizeS = 'Set USD/IDR data was unavailable, so sizing could not be computed.';
+          if (rpuIDR) {
+            const units = riskIDR / rpuIDR;
+            const posIDR = units * (isIDX(SYMBOL) ? plan.entry : plan.entry * usdidr);
+            const sizeStr = isIDX(SYMBOL)
+              ? `${Math.floor(units).toLocaleString('id-ID')} shares (about ${Math.floor(units / 100)} lot)`
+              : `${units.toFixed(6)} ${shortSym(SYMBOL)}`;
+            sizeS = `With modal ${fmtIDR(MODAL)} and ${RISKPCT}% risk per trade, the size is ${sizeStr}, a position of about ${fmtIDR(posIDR)}. The technical view has the full calculator.`;
+          }
+          const evR = proj.pT1First != null
+            ? proj.pT1First * 1.5 - proj.pStop * 1
+            : proj.pT1 * 1.5 - proj.pStop * 1;
+          const oddsS = `The model gives a ${Math.round(proj.pT1 * 100)}% chance of reaching the first target within the ${cfg.projLabel.replace('next ', '')} and a ${Math.round(proj.pStop * 100)}% chance of hitting the stop first or along the way.`
+            + (proj.pT1First != null ? ` Across simulated paths, the target came before the stop ${Math.round(proj.pT1First * 100)}% of the time.` : '')
+            + ` Rough expected value: ${evR >= 0 ? '+' : ''}${evR.toFixed(2)}R per attempt. `
+            + (evR < 0 ? 'Negative expected value means the odds do not pay for the risk. Passing is the rational move.' : 'The odds pay for the risk, though nothing is guaranteed.');
+          const trackS = bt
+            ? `${bt.n} historical trades on this market and timeframe, with costs applied: ${Math.round(bt.winRate)}% winners, expectancy ${(bt.expectancy >= 0 ? '+' : '') + bt.expectancy.toFixed(2)}R per trade. ${bt.expectancy < 0 ? 'The signal has lost money here historically. Weigh that heavily.' : 'The signal has made money here historically.'}`
+            : 'Free data has no candle history for this market, so there is no backtest. The paper trading scoreboard above tracks its live calls instead.';
+          const bottomS = {
+            buy: 'Bottom line: a real setup with defined risk. Take it only with the stop in place.',
+            wait: 'Bottom line: put it on the watchlist and let it prove itself first.',
+            range: 'Bottom line: skip it. Sideways markets grind accounts down.',
+            weak: 'Bottom line: hold with a tighter exit if you own it. No reason to start new money here.',
+            avoid: 'Bottom line: not yet. Falling assets are usually cheaper next week.',
+            short: 'Bottom line: a setup for experienced accounts with margin access. Everyone else stays out.',
+          }[verdict.kind];
+
+          body.innerHTML = `
+            <div class="q-toprow" style="grid-template-columns:1fr 1.4fr">
+              <div class="q-card">
+                <h3>The verdict · ${shortSym(SYMBOL)} · ${cfg.label}</h3>
+                <span class="verdict-badge ${verdict.cls}">${verdict.label}</span>
+                <div class="scorebar"><div style="width:${sc.total}%;background:${scoreColor}"></div></div>
+                <div class="num" style="font-size:12px;color:var(--muted)">Conviction score: ${sc.total} of 100</div>
+                <div class="q-simple" style="border-left-color:${VERDICT_COLOR[verdict.kind]}">${SIMPLE_TERMS[verdict.kind]}</div>
+                <div class="sv-block"><div class="h">The situation</div>
+                  ${shortSym(SYMBOL)} trades at ${fmtPrice(s.close)}, ${fmtPct(s['Perf.W'])} over the past week and ${fmtPct(s['Perf.1M'])} over the past month.
+                  ${trendS} ${momS} It sits at ${(sc.pos * 100).toFixed(0)}% of its one-year price range. ${regimeS}</div>
+                <div class="q-invest">${investLine}</div>
+                ${tfNote}
+              </div>
+              <div class="q-card">
+                <h3>What to do about it</h3>
+                <div style="font-size:13px;line-height:1.6">${kindLead}</div>
+                <ol class="sv-steps">
+                  <li>${isShortPlan ? 'Sell short' : 'Buy'} between <b class="num">${fmtPrice(plan.entryLow)}</b> and <b class="num">${fmtPrice(plan.entryHigh)}</b>.</li>
+                  <li>Pre-commit your exit at <b class="num" style="color:var(--down)">${fmtPrice(plan.stop)}</b>. If price gets there, you are out.
+                      Worst case is about ${lossPct.toFixed(1)}% of the position, or roughly ${fmtIDR(riskIDR)} with the sizing below.</li>
+                  <li>Take half the profit at <b class="num" style="color:var(--up)">${fmtPrice(plan.t1)}</b> (${fmtPct(t1pct)} from entry)
+                      and aim the rest at <b class="num" style="color:var(--up)">${fmtPrice(plan.t2)}</b> (${fmtPct(t2pct)}).</li>
+                  <li>Reward to risk is 1.5 to 1 on the first target, after ${(costFrac() * 100).toFixed(2)}% round-trip costs.</li>
+                  <li>Expected holding period: ${cfg.hold.split(': ')[1]}.</li>
+                </ol>
+                <div class="sv-block"><div class="h">The odds, per the model</div>${oddsS}</div>
+                <div class="sv-block"><div class="h">Track record</div>${trackS}</div>
+                <div class="sv-block"><div class="h">Sizing</div>${sizeS}</div>
+                <button class="refresh" id="arm-alerts" style="margin-top:12px">Arm alerts: entry / stop / TP1</button>
+              </div>
+            </div>
+            <div class="sv-bottom" style="border-left:3px solid ${VERDICT_COLOR[verdict.kind]}">${bottomS}</div>
+            <div style="font-size:11px;color:var(--subtle);line-height:1.6">
+              R is one unit of risk: the distance from your entry to your stop. Making 1.5R means earning 1.5 times what you agreed to lose if wrong.
+              Think of the stop as a covenant with yourself. The Technical view (top of this panel) has the projections, the backtest and every number behind this summary.
+              Automated analysis, not financial advice.
+            </div>`;
+          document.getElementById('arm-alerts').addEventListener('click', () => armPlanAlerts(plan, SYMBOL));
+          return;
+        }
 
         const horizonCells = horizons.map(([lab, v]) =>
           `<div class="h-cell"><div class="lab">${lab}</div><div class="val num ${clsPct(v)}">${fmtPct(v)}</div></div>`).join('');
 
         const bbPos = s['BB.upper'] > s['BB.lower'] ? ((s.close - s['BB.lower']) / (s['BB.upper'] - s['BB.lower'])) : 0.5;
         const techCells = [
-          ['RSI (momentum meter)', s.RSI?.toFixed(1), s.RSI > 70 ? 'Too hot — overbought' : s.RSI < 30 ? 'Beaten up — oversold' : s.RSI >= 45 && s.RSI <= 65 ? 'Healthy zone' : 'Neutral'],
+          ['RSI (momentum meter)', s.RSI?.toFixed(1), s.RSI > 70 ? 'Too hot, overbought' : s.RSI < 30 ? 'Beaten up, oversold' : s.RSI >= 45 && s.RSI <= 65 ? 'Healthy zone' : 'Neutral'],
           ['MACD (trend signal)', s['MACD.macd'] > s['MACD.signal'] ? 'Bullish cross' : 'Bearish cross', 'momentum ' + (s['MACD.macd'] > s['MACD.signal'] ? 'building up' : 'fading')],
           ['Trend health', trendRegime.split(' (')[0], trendRegime.includes('(') ? trendRegime.split(' (')[1].replace(')', '') : ''],
-          ['ADX (trend strength)', s.ADX?.toFixed(1), s.ADX >= 25 ? 'Real trend in motion' : s.ADX >= 20 ? 'Trend developing' : 'Choppy — no clear trend'],
+          ['ADX (trend strength)', s.ADX?.toFixed(1), s.ADX >= 25 ? 'Real trend in motion' : s.ADX >= 20 ? 'Trend developing' : 'Choppy, no clear trend'],
           ['ATR (typical move)', fmtPrice(s.ATR), 'moves ~' + (s.ATR / s.close * 100).toFixed(2) + '% per ' + cfg.barName + ' bar'],
-          ['52-week position', (sc.pos * 100).toFixed(0) + '%', `${fmtPrice(s.price_52_week_low)} – ${fmtPrice(s.price_52_week_high)}`],
+          ['52-week position', (sc.pos * 100).toFixed(0) + '%', `${fmtPrice(s.price_52_week_low)} to ${fmtPrice(s.price_52_week_high)}`],
           ['Bollinger position', (bbPos * 100).toFixed(0) + '%', bbPos > 0.85 ? 'Stretched high' : bbPos < 0.15 ? 'At the lows' : 'Middle of range'],
           ['Crowd signal (TV)', s['Recommend.All'] > 0.3 ? 'BUY' : s['Recommend.All'] > 0.1 ? 'Lean buy' : s['Recommend.All'] < -0.3 ? 'SELL' : s['Recommend.All'] < -0.1 ? 'Lean sell' : 'NEUTRAL', 'TradingView community gauge'],
         ].map(([lab, val, hint]) =>
@@ -1781,7 +1924,7 @@
           ['Sharpe ratio (1Y)', metrics.sharpe.toFixed(2), metrics.sharpe > 1 ? 'paid well for the risk' : metrics.sharpe > 0 ? 'barely paid for the risk' : 'risk without reward lately'],
           ['Sortino ratio', metrics.sortino.toFixed(2), 'like Sharpe, but only counts drops'],
           ['Max drawdown (1Y)', metrics.maxDD.toFixed(1) + '%', 'worst fall from a peak'],
-          ['Trend drift (regression)', fmtPct(metrics.regDriftAnn, 1) + '/yr', 'R² ' + metrics.r2.toFixed(2) + (metrics.r2 > 0.6 ? ' — strong trend' : metrics.r2 > 0.3 ? ' — moderate' : ' — mostly noise')],
+          ['Trend drift (regression)', fmtPct(metrics.regDriftAnn, 1) + '/yr', 'R² ' + metrics.r2.toFixed(2) + (metrics.r2 > 0.6 ? ', strong trend' : metrics.r2 > 0.3 ? ', moderate' : ', mostly noise')],
           ['VaR 95% per ' + cfg.quarters[0], fmtPct(metrics.var95, 1), 'a 1-in-20 bad stretch looks like this'],
           [cfg.quarters[0] + ' win rate', metrics.winWeeks.toFixed(0) + '%', 'share of ' + cfg.quarters[0] + ' windows that ended green'],
           ['Autocorrelation', metrics.acf1.toFixed(3), metrics.acf1 > 0.05 ? 'moves tend to continue' : metrics.acf1 < -0.05 ? 'moves tend to reverse' : 'close to a coin flip'],
@@ -1801,11 +1944,11 @@
         body.innerHTML = `
           <div class="q-toprow">
             <div class="q-card">
-              <h3>Verdict — ${shortSym(SYMBOL)}</h3>
+              <h3>Verdict, ${shortSym(SYMBOL)}</h3>
               <span class="verdict-badge ${verdict.cls}">${verdict.label}</span>
               <div class="scorebar"><div style="width:${sc.total}%;background:${scoreColor}"></div></div>
               <div class="num" style="font-size:12px;color:var(--muted)">Score <b style="color:${scoreColor}">${sc.total}/100</b>
-                — trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
+               , trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
               <div class="q-simple" style="border-left-color:${VERDICT_COLOR[verdict.kind]}">${SIMPLE_TERMS[verdict.kind]}</div>
               <div class="q-reason">${trendRegime} on the ${cfg.label} timeframe. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
                 ${fmtPct(s['Perf.W'])} this week, ${fmtPct(s['Perf.1M'])} this month.
@@ -1815,23 +1958,22 @@
             </div>
 
             <div class="q-card">
-              <h3>Trade plan — ${cfg.hold}${isShortPlan ? ' · SHORT' : ''}</h3>
+              <h3>Trade plan · ${cfg.hold}${isShortPlan ? ' · SHORT' : ''}</h3>
               <div class="plan-grid num">
-                <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} – ${fmtPrice(plan.entryHigh)}</div></div>
+                <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} to ${fmtPrice(plan.entryHigh)}</div></div>
                 <div><div class="lab">Stop loss (1.5× ${cfg.label} ATR ${isShortPlan ? 'above' : 'below'})</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
-                <div><div class="lab">Take profit 1 (1.5R net) — ${isShortPlan ? 'cover' : 'sell'} half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
+                <div><div class="lab">Take profit 1 (1.5R net), ${isShortPlan ? 'cover' : 'sell'} half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
                 <div><div class="lab">Take profit 2 (2.5R net)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
               </div>
               <div class="plan-note">
-                <b>Costs included:</b> ${FEEPCT}% fee + ${SLIPPCT}% slippage per side = ${(costFrac() * 100).toFixed(2)}% round trip —
-                take-profit levels are pushed out so 1.5R / 2.5R are what you keep <i>after</i> costs.<br>
+                <b>Costs included:</b> ${FEEPCT}% fee + ${SLIPPCT}% slippage per side = ${(costFrac() * 100).toFixed(2)}% round trip. Take-profit levels are pushed out so 1.5R and 2.5R are what you keep after costs.<br>
                 <b>Exit rules:</b> stop hit → ${isShortPlan ? 'cover' : 'sell'}, no debate, no averaging ${isShortPlan ? 'up' : 'down'}. At TP1 take half off and move your stop to entry (now you can’t lose).
                 ${isShortPlan
                   ? `A ${cfg.barName} close above the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → cover the short. RSI below 25 → take some profit.`
                   : `A ${cfg.barName} close below the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → exit the trade. RSI above 75 → take some profit.`}
                 ${verdict.kind === 'wait' ? `<b>Trigger to enter:</b> a ${cfg.barName} close back above the ${cfg.label} EMA-20 (` + fmtPrice(s.EMA20) + ').' : ''}
                 ${verdict.kind === 'avoid' ? `<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the ${cfg.label} EMA-200 (` + fmtPrice(s.EMA200) + ').</b>' : ''}
-                ${isShortPlan && SYMBOL.startsWith('IDX:') ? '<b style="color:var(--warn)">IDX retail accounts generally cannot short — treat this as a strong reason to stay out or exit longs.</b>' : ''}
+                ${isShortPlan && SYMBOL.startsWith('IDX:') ? '<b style="color:var(--warn)">IDX retail accounts generally cannot short. Treat this as a strong reason to stay out or to exit longs.</b>' : ''}
               </div>
               <button class="refresh" id="arm-alerts" style="margin-top:10px">Arm alerts: entry / stop / TP1</button>
             </div>
@@ -1851,19 +1993,18 @@
           ${projectionHTML(proj, s.close)}
 
           ${(() => {
-            if (!klines || klines.length < 260) {
+            if (!bt) {
               return `<div>
-                <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest — does the signal work?</h3>
+                <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest: does the signal work?</h3>
                 <div class="q-card" style="font-size:12.5px;color:var(--muted);line-height:1.6">
                   Backtesting needs full candle history, which the free feeds only provide for crypto (Binance).
-                  For ${shortSym(SYMBOL)} there is no series to replay — judge the signal via the crypto backtests and the paper-trading scoreboard, which works for every market.
+                  There is no series to replay for ${shortSym(SYMBOL)}. Judge the signal through the crypto backtests and the paper trading scoreboard, which covers every market.
                 </div></div>`;
             }
-            const bt = backtest(klines, costFrac(), cfg);
             const chip = (lab, val, cls = '') => `<div class="pf-chip"><div class="lab">${lab}</div><div class="val num ${cls}">${val}</div></div>`;
             const few = bt.n < 20;
             return `<div>
-              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest — this signal on ${shortSym(SYMBOL)}, ${cfg.label} bars, costs included</h3>
+              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest: this signal on ${shortSym(SYMBOL)}, ${cfg.label} bars, costs included</h3>
               <div class="bt-chips">
                 ${chip('Trades', bt.n + ` <span style="font-size:10px;color:var(--subtle)">(${bt.longs}L/${bt.shorts}S)</span>`)}
                 ${chip('Win rate', bt.winRate != null ? Math.round(bt.winRate) + '%' : '—')}
@@ -1877,9 +2018,9 @@
               <div style="font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.5">
                 Replays this exact score (long + short, threshold 70, ADX ≥ 20) over ${bt.bars.toLocaleString()} ${cfg.barName} bars:
                 enter at signal close, exit at stop / TP1 / time-stop (${cfg.projBars * 2} bars), your fee + slippage applied, stop assumed to fill first when both hit in one bar.
-                ${few ? '<b style="color:var(--warn)">Small sample (' + bt.n + ' trades) — read with caution.</b>' : ''}
-                ${bt.expectancy != null && bt.expectancy < 0 ? '<b style="color:var(--down)">Negative expectancy on this market/timeframe — the signal has NOT worked here. Respect that.</b>' : ''}
-                ${bt.expectancy != null && bt.expectancy >= 0.1 ? '<b style="color:var(--up)">Positive expectancy here — still no guarantee, but the signal has historically paid for its risk.</b>' : ''}
+                ${few ? '<b style="color:var(--warn)">Small sample (' + bt.n + ' trades), read with caution.</b>' : ''}
+                ${bt.expectancy != null && bt.expectancy < 0 ? '<b style="color:var(--down)">Negative expectancy on this market/timeframe, the signal has NOT worked here. Respect that.</b>' : ''}
+                ${bt.expectancy != null && bt.expectancy >= 0.1 ? '<b style="color:var(--up)">Positive expectancy here, still no guarantee, but the signal has historically paid for its risk.</b>' : ''}
               </div>
             </div>`;
           })()}
@@ -1905,7 +2046,7 @@
             <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
               Macro monitor · regime:
               <span class="regime" style="color:${regime.color}"><span class="dot" style="background:${regime.color}"></span>${regime.label}</span>
-              <span style="font-weight:400;text-transform:none;letter-spacing:0"> — ${regime.note}</span>
+              <span style="font-weight:400;text-transform:none;letter-spacing:0">, ${regime.note}</span>
             </h3>
             <div class="macro-grid">${macroCells}</div>
           </div>
@@ -1914,7 +2055,7 @@
             <b>Method:</b> score = trend (EMA 20/50/200 stack + MACD, 35) + momentum (RSI zone + 1W/1M sign, 25)
             + trend strength (ADX, 20) + 52-week positioning (20). Entries/stops/targets are ATR-based (stop 1.5×ATR, targets 1.5R/2.5R).
             Macro regime votes: DXY 1M ↓, S&amp;P 500 1M ↑, USD/IDR 1M ↓, Gold 1M ↓ → risk-on.
-            Live data via TradingView scanner + Binance. IDX quotes may be delayed. Automated technical analysis — <b>not financial advice</b>.
+            Live data via TradingView scanner + Binance. IDX quotes may be delayed. Automated technical analysis, <b>not financial advice</b>.
           </div>`;
 
         function sizeOut() {
@@ -1934,11 +2075,11 @@
               ? `Size: <b>${Math.floor(units).toLocaleString('id-ID')} shares ≈ ${lots} lot</b><br>`
               : `Size: <b>${units.toFixed(6)} ${shortSym(SYMBOL)}</b><br>`) +
             `Position value ≈ <b>${fmtIDR(posIDR)}</b> (${(posIDR / modal * 100).toFixed(1)}% of modal)` +
-            (posIDR > modal ? ' <span style="color:var(--down)">— exceeds modal, cap it!</span>' : '');
+            (posIDR > modal ? ' <span style="color:var(--down)">(exceeds modal, cap it)</span>' : '');
         }
         document.getElementById('q-modal').addEventListener('input', sizeOut);
         document.getElementById('q-risk').addEventListener('input', sizeOut);
-        // Fee/slippage changes shift the TP levels — re-render the panel from cached data.
+        // Fee/slippage changes shift the TP levels, re-render the panel from cached data.
         let costTimer = null;
         function onCost() {
           FEEPCT = Math.max(0, +document.getElementById('q-fee').value || 0);
@@ -1954,7 +2095,7 @@
       }
 
       /* ------------------------------------------------------------------ *
-       * Orchestrator — one fetch feeds briefing, radar, portfolio, quant    *
+       * Orchestrator, one fetch feeds briefing, radar, portfolio, quant    *
        * ------------------------------------------------------------------ */
       let liveSeq = 0;
       async function refreshLive() {
@@ -2054,6 +2195,30 @@
         refreshLive();
       }
 
+      function buildViewSeg() {
+        const host = document.getElementById('view-seg');
+        host.innerHTML = '';
+        for (const [key, label, hint] of [
+          ['simple', 'Simple', 'The position explained in plain language'],
+          ['tech', 'Technical', 'Projections, backtest and every number'],
+        ]) {
+          const b = document.createElement('button');
+          b.textContent = label; b.dataset.view = key; b.title = hint;
+          b.addEventListener('click', () => setView(key));
+          host.appendChild(b);
+        }
+        syncViewSeg();
+      }
+      function syncViewSeg() {
+        document.querySelectorAll('#view-seg button').forEach((b) =>
+          b.classList.toggle('active', b.dataset.view === VIEW));
+      }
+      function setView(v) {
+        if (v === VIEW) return;
+        VIEW = v; persist(); syncViewSeg();
+        if (window.__lastQuant) renderQuantPanel(...window.__lastQuant);
+      }
+
       const SUN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>';
       const MOON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
       function applyTheme() {
@@ -2083,6 +2248,7 @@
 
       buildChips();
       buildTfSeg();
+      buildViewSeg();
       applyTheme();
       renderAllWidgets();
       refreshLive();
