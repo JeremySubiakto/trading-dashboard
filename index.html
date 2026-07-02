@@ -140,7 +140,11 @@
         padding: 10px 4px; border-bottom: 1px solid var(--border);
       }
       .brief-item:last-child { border-bottom: 0; }
-      .brief-item .ic { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }
+      .brief-item .tag {
+        flex: 0 0 auto; font-size: 10px; font-weight: 800; letter-spacing: .7px;
+        padding: 4px 8px; border-radius: 5px; color: #fff; margin-top: 2px;
+        min-width: 62px; text-align: center; text-transform: uppercase;
+      }
       .brief-item .tt { font-size: 13.5px; font-weight: 700; }
       .brief-item .tx { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 2px; }
 
@@ -233,7 +237,7 @@
       .q-reason { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 8px; }
       .q-simple {
         margin-top: 10px; font-size: 13px; line-height: 1.55; background: var(--panel);
-        border: 1px dashed var(--border); border-radius: 9px; padding: 9px 11px;
+        border: 1px solid var(--border); border-left-width: 3px; border-radius: 9px; padding: 9px 11px;
       }
       .q-invest { margin-top: 10px; font-size: 12.5px; line-height: 1.5; }
 
@@ -328,8 +332,8 @@
           </div>
         </div>
         <nav class="nav" id="site-nav">
-          <a href="#" id="nav-money">💰 Money</a>
-          <a href="#" class="active">📈 Trading</a>
+          <a href="#" id="nav-money">Money</a>
+          <a href="#" class="active">Trading</a>
         </nav>
         <div class="spacer"></div>
         <form class="search" id="search-form" title="Type EXCHANGE:TICKER, e.g. IDX:BBCA or BINANCE:ETHUSDT">
@@ -347,7 +351,7 @@
       <!-- Today's briefing -->
       <section class="panel" id="briefing">
         <div class="panel-head">
-          <h2>☀️ Today’s briefing — plain &amp; simple</h2>
+          <h2>Today’s briefing — plain &amp; simple</h2>
           <span style="display:flex;align-items:center;gap:10px">
             <span class="q-updated" id="q-updated">loading…</span>
             <button class="refresh" id="q-refresh">↻ Refresh</button>
@@ -362,14 +366,14 @@
       <div class="duo">
         <section class="panel" id="portfolio">
           <div class="panel-head">
-            <h2>💼 My portfolio — live PnL</h2>
+            <h2>My portfolio — live PnL</h2>
             <span class="sub">Saved on this device · marks to market live</span>
           </div>
           <div id="pf-body"><div class="q-loading">Loading…</div></div>
         </section>
         <section class="panel" id="radar">
           <div class="panel-head">
-            <h2>🎯 Opportunity radar</h2>
+            <h2>Opportunity radar</h2>
             <span class="sub">Every symbol scored 0–100 · click a row to open it</span>
           </div>
           <div class="panel-body" style="overflow-x:auto" id="radar-body">
@@ -401,7 +405,7 @@
       <!-- Quant Lab -->
       <section class="panel" id="quant">
         <div class="panel-head">
-          <h2>🔬 Quant Lab · deep analysis</h2>
+          <h2>Quant Lab · deep analysis</h2>
           <span class="sub" id="quant-sub">for the selected symbol</span>
         </div>
         <div class="q-body" id="q-body">
@@ -411,7 +415,7 @@
 
       <!-- Beginner guide -->
       <details class="guide">
-        <summary>📖 New to trading? Read this first (2 minutes)</summary>
+        <summary>New to trading? Read this first (2 minutes)</summary>
         <div class="g-body">
           <h4>The only 3 rules that matter</h4>
           <b style="color:var(--text)">1. Never risk more than 1% of your money on one trade.</b> Use the position-size calculator in the Quant Lab — it does the math for you.<br />
@@ -424,10 +428,10 @@
           Decide before you buy — most losses come from swings that turn into accidental "investments."
 
           <h4>How to read the colors</h4>
-          🟢 <b style="color:var(--text)">Buy zone</b> — a real setup exists, with entry/stop/targets. ·
-          🟡 <b style="color:var(--text)">Wait</b> — promising but not confirmed. ·
-          ⚪ <b style="color:var(--text)">Range</b> — sideways, skip it. ·
-          🔴 <b style="color:var(--text)">Avoid</b> — still falling; cheap can get cheaper.
+          <span class="dot" style="background:var(--up);display:inline-block"></span> <b style="color:var(--text)">Buy zone</b> — a real setup exists, with entry/stop/targets. ·
+          <span class="dot" style="background:var(--warn);display:inline-block"></span> <b style="color:var(--text)">Wait</b> — promising but not confirmed. ·
+          <span class="dot" style="background:#5a6273;display:inline-block"></span> <b style="color:var(--text)">Range</b> — sideways, skip it. ·
+          <span class="dot" style="background:var(--down);display:inline-block"></span> <b style="color:var(--text)">Avoid</b> — still falling; cheap can get cheaper.
 
           <h4>Quick glossary</h4>
           <div class="gloss">
@@ -466,7 +470,7 @@
         crypto candles by Binance public data. IDX quotes may be delayed on free feeds.
         Portfolio data lives only in your browser (localStorage) — nothing is uploaded anywhere.<br />
         This dashboard analyzes and monitors; order execution happens at your broker / exchange.
-        Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto. 🙏
+        Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto.
       </footer>
     </div>
 
@@ -715,6 +719,141 @@
         ];
       }
 
+      /* ------------------------------------------------------------------ *
+       * Projection models                                                   *
+       * Crypto: bootstrap Monte Carlo resampling real daily returns.        *
+       * Stocks: parametric driftless GBM from TradingView monthly vol.      *
+       * ------------------------------------------------------------------ */
+      function mulberry(seed) {
+        let a = seed >>> 0;
+        return () => {
+          a |= 0; a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function hashStr(str) {
+        let h = 2166136261;
+        for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+        return h >>> 0;
+      }
+      const percentile = (arr, q) => {
+        const a = [...arr].sort((x, y) => x - y);
+        return a[Math.min(a.length - 1, Math.floor(q * a.length))];
+      };
+      function normCdf(x) {
+        const t = 1 / (1 + 0.2316419 * Math.abs(x));
+        const d = 0.3989423 * Math.exp(-x * x / 2);
+        const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+        return x > 0 ? 1 - p : p;
+      }
+
+      /** Bootstrap Monte Carlo: 1,500 paths × 28 days resampled from the last year of real daily returns. */
+      function mcProjection(closes, spot, stop, t1, sym) {
+        const src = closes.slice(-366);
+        const rets = [];
+        for (let i = 1; i < src.length; i++) rets.push(Math.log(src[i] / src[i - 1]));
+        // Seed on symbol + date so numbers are stable within a day (no jitter every refresh).
+        const rng = mulberry(hashStr(sym + new Date().toISOString().slice(0, 10)));
+        const N = 1500, H = 28;
+        const daily = Array.from({ length: H }, () => []);
+        let touchT1 = 0, touchStop = 0, t1First = 0;
+        for (let n = 0; n < N; n++) {
+          let p = spot, hT = false, hS = false, first = false;
+          for (let d = 0; d < H; d++) {
+            p *= Math.exp(rets[Math.floor(rng() * rets.length)]);
+            daily[d].push(p);
+            if (!hT && p >= t1) { hT = true; if (!hS) first = true; }
+            if (!hS && p <= stop) hS = true;
+          }
+          if (hT) touchT1++; if (hS) touchStop++; if (first) t1First++;
+        }
+        const bands = daily.map((a) => ({
+          p5: percentile(a, 0.05), p25: percentile(a, 0.25), p50: percentile(a, 0.5),
+          p75: percentile(a, 0.75), p95: percentile(a, 0.95),
+        }));
+        return {
+          bands, H, weekDays: 7, pT1: touchT1 / N, pStop: touchStop / N, pT1First: t1First / N,
+          method: 'Bootstrap Monte Carlo — 1,500 paths resampled from the last 12 months of actual daily returns. Touch probabilities are path-based (counted along each simulated path).',
+        };
+      }
+
+      /** Parametric fallback when no daily history is available (IDX / US stocks). */
+      function gbmProjection(spot, dailyVolPct, stop, t1) {
+        const sd = Math.max(0.003, (dailyVolPct || 2) / 100);
+        const H = 20; // trading days ≈ 4 weeks
+        const zs = { p5: -1.645, p25: -0.674, p50: 0, p75: 0.674, p95: 1.645 };
+        const bands = [];
+        for (let d = 1; d <= H; d++) {
+          const sT = sd * Math.sqrt(d), drift = -sd * sd * d / 2;
+          const b = {};
+          for (const [k, z] of Object.entries(zs)) b[k] = spot * Math.exp(drift + z * sT);
+          bands.push(b);
+        }
+        const sT = sd * Math.sqrt(H);
+        const pStop = Math.min(1, 2 * normCdf(Math.log(stop / spot) / sT));
+        const pT1 = Math.min(1, 2 * (1 - normCdf(Math.log(t1 / spot) / sT)));
+        return {
+          bands, H, weekDays: 5, pT1, pStop, pT1First: null,
+          method: 'Parametric model (driftless GBM) using TradingView monthly volatility — an approximation; touch probabilities use the reflection principle. No free daily history exists for this market, so treat these as rough bands.',
+        };
+      }
+
+      /** Fan chart: 90% and 50% bands + median path + stop/target levels. Pure SVG, no libs. */
+      function fanSVG(proj, spot, stop, t1) {
+        const { bands, H, weekDays } = proj;
+        const W = 680, Ht = 200, mL = 62, mR = 10, mT = 12, mB = 24;
+        const lo = Math.min(stop, ...bands.map((b) => b.p5)) * 0.995;
+        const hi = Math.max(t1, ...bands.map((b) => b.p95)) * 1.005;
+        const X = (d) => mL + (d / H) * (W - mL - mR);
+        const Y = (v) => mT + (1 - (v - lo) / (hi - lo)) * (Ht - mT - mB);
+        const fwd = (k) => bands.map((b, i) => `${X(i + 1).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ');
+        const back = (k) => [...bands].map((_, i) => {
+          const b = bands[H - 1 - i];
+          return `${X(H - i).toFixed(1)},${Y(b[k]).toFixed(1)}`;
+        }).join(' ');
+        const area = (loK, hiK) => `${X(0).toFixed(1)},${Y(spot).toFixed(1)} ${fwd(hiK)} ${back(loK)}`;
+        const weeks = [1, 2, 3, 4].map((w) => ({ x: X(Math.min(H, w * weekDays)), lab: w + 'W' }));
+        return `<svg viewBox="0 0 ${W} ${Ht}" style="width:100%;height:auto;display:block" role="img" aria-label="4-week price projection fan chart">
+          ${weeks.map((w) => `<line x1="${w.x}" y1="${mT}" x2="${w.x}" y2="${Ht - mB}" stroke="var(--border)" stroke-width="1" opacity="0.7"/>`).join('')}
+          <polygon points="${area('p5', 'p95')}" fill="var(--accent)" opacity="0.10"/>
+          <polygon points="${area('p25', 'p75')}" fill="var(--accent)" opacity="0.18"/>
+          <polyline points="${X(0).toFixed(1)},${Y(spot).toFixed(1)} ${fwd('p50')}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <line x1="${mL}" y1="${Y(t1)}" x2="${W - mR}" y2="${Y(t1)}" stroke="var(--up)" stroke-dasharray="5 4" stroke-width="1.4"/>
+          <line x1="${mL}" y1="${Y(stop)}" x2="${W - mR}" y2="${Y(stop)}" stroke="var(--down)" stroke-dasharray="5 4" stroke-width="1.4"/>
+          <text x="${W - mR - 4}" y="${Y(t1) - 5}" text-anchor="end" font-size="10.5" fill="var(--up)">T1 ${fmtPrice(t1)}</text>
+          <text x="${W - mR - 4}" y="${Y(stop) + 13}" text-anchor="end" font-size="10.5" fill="var(--down)">Stop ${fmtPrice(stop)}</text>
+          <text x="${mL - 6}" y="${Y(spot) + 4}" text-anchor="end" font-size="10.5" fill="var(--muted)">${fmtPrice(spot)}</text>
+          ${weeks.map((w) => `<text x="${w.x}" y="${Ht - 8}" text-anchor="middle" font-size="10.5" fill="var(--subtle)">${w.lab}</text>`).join('')}
+        </svg>`;
+      }
+
+      /** Full projection section HTML for the Quant Lab. */
+      function projectionHTML(proj, spot) {
+        const wkRows = [1, 2, 3, 4].map((w) => {
+          const b = proj.bands[Math.min(proj.H, w * proj.weekDays) - 1];
+          const pc = (v) => fmtPct((v / spot - 1) * 100);
+          return `<div class="h-cell"><div class="lab">${w}W median</div>
+            <div class="val num ${clsPct(b.p50 - spot)}">${pc(b.p50)}</div>
+            <div style="font-size:10.5px;color:var(--subtle)" class="num">90%: ${pc(b.p5)} … ${pc(b.p95)}</div></div>`;
+        }).join('');
+        const probs = `
+          <div class="h-cell"><div class="lab">P(hit Target 1 in 4W)</div><div class="val num" style="color:var(--up)">${Math.round(proj.pT1 * 100)}%</div></div>
+          <div class="h-cell"><div class="lab">P(hit Stop in 4W)</div><div class="val num" style="color:var(--down)">${Math.round(proj.pStop * 100)}%</div></div>
+          ${proj.pT1First != null ? `<div class="h-cell"><div class="lab">P(Target before Stop)</div><div class="val num">${Math.round(proj.pT1First * 100)}%</div></div>` : ''}`;
+        return `
+          <div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Projection — next 4 weeks (model, not a promise)</h3>
+            <div class="q-card" style="padding:10px 12px">${fanSVG(proj, spot, proj._stop, proj._t1)}</div>
+            <div class="horiz" style="margin-top:8px">${wkRows}${probs}</div>
+            <div style="font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.5">
+              <b>Model:</b> ${proj.method} The shaded areas are where price lands in 50% (dark) and 90% (light) of scenarios.
+              If P(hit Stop) is higher than P(Target before Stop), the trade math is against you — skip it.
+            </div>
+          </div>`;
+      }
+
       function scoreSnapshot(s) {
         let trend = 0;
         const c = s.close;
@@ -757,12 +896,13 @@
       }
 
       const SIMPLE_TERMS = {
-        buy: '🟢 <b>Simple terms:</b> the wind is at your back — this is rising with real strength. You may buy, but only with the stop loss set below. No stop, no trade.',
-        wait: '🟡 <b>Simple terms:</b> promising, but not proven yet. Let it show strength first (the trigger below) — missing the first 2% is cheaper than catching a fake move.',
-        range: '⚪ <b>Simple terms:</b> price is going sideways, like a car stuck in traffic. Skip it — there are better uses of your money and attention.',
-        weak: '⚪ <b>Simple terms:</b> the long-term trend is still OK but it’s losing steam. If you own it, tighten your exit. If you don’t own it — no rush at all.',
-        avoid: '🔴 <b>Simple terms:</b> this is still falling. Buying now is catching a falling knife — it looks cheap, then gets cheaper. Wait until it stops falling first.',
+        buy: '<b>In plain terms:</b> the wind is at your back — this is rising with real strength. You may buy, but only with the stop loss set below. No stop, no trade.',
+        wait: '<b>In plain terms:</b> promising, but not proven yet. Let it show strength first (the trigger below) — missing the first 2% is cheaper than catching a fake move.',
+        range: '<b>In plain terms:</b> price is going sideways, like a car stuck in traffic. Skip it — there are better uses of your money and attention.',
+        weak: '<b>In plain terms:</b> the long-term trend is still OK but it’s losing steam. If you own it, tighten your exit. If you don’t own it — no rush at all.',
+        avoid: '<b>In plain terms:</b> this is still falling. Buying now is catching a falling knife — it looks cheap, then gets cheaper. Wait until it stops falling first.',
       };
+      const VERDICT_COLOR = { buy: 'var(--up)', wait: 'var(--warn)', range: '#5a6273', weak: '#5a6273', avoid: 'var(--down)' };
 
       function tradePlan(s, verdict) {
         const atr = s.ATR, c = s.close;
@@ -830,12 +970,26 @@
         const host = document.getElementById('pf-body');
         const v = valuePortfolio(pf, scan, usdidr);
 
+        /* Portfolio 1-week 95% VaR band: per-position sigma from TV monthly vol;
+           lower bound assumes uncorrelated positions, upper bound perfectly correlated. */
+        let varIndep = 0, varSum = 0;
+        for (const r of v.rows) {
+          const q = scan[r.sym];
+          const sd = q && q['Volatility.M'] ? q['Volatility.M'] / 100 : 0.02;
+          const c = r.valueIDR * sd * Math.sqrt(5) * 1.645;
+          varIndep += c * c; varSum += c;
+        }
+        const varLo = Math.sqrt(varIndep), varHi = varSum;
+
         const summary = pf.positions.length ? `
           <div class="pf-summary num">
             <div class="pf-chip"><div class="lab">Total value</div><div class="val">${fmtIDR(v.totalIDR)}</div></div>
             <div class="pf-chip"><div class="lab">Unrealized PnL</div>
               <div class="val ${clsPct(v.pnlIDR)}">${fmtIDRsigned(v.pnlIDR)} <span style="font-size:12px">(${fmtPct(v.pnlPct)})</span></div></div>
             <div class="pf-chip"><div class="lab">Today</div><div class="val ${clsPct(v.dayIDR)}">${fmtIDRsigned(v.dayIDR)}</div></div>
+            <div class="pf-chip" title="A 1-in-20 bad week could cost roughly this much. Range: uncorrelated vs fully correlated positions.">
+              <div class="lab">1W VaR 95% (est.)</div>
+              <div class="val" style="color:var(--warn)">${fmtIDR(varLo)}${varHi > varLo * 1.05 ? ' – ' + fmtIDR(varHi) : ''}</div></div>
           </div>` : '';
 
         const table = pf.positions.length ? `
@@ -858,7 +1012,7 @@
           ${v.missing.length ? `<div class="pf-note">⚠ No live quote for: ${v.missing.join(', ')} — excluded from totals.</div>` : ''}`
         : `<div class="pf-empty">No positions yet. Add what you own below — e.g. <b>IDX:BBCA</b>, qty <b>500</b> (5 lot), entry <b>5600</b> —
              and this page will track your live profit &amp; loss in Rupiah, updating every 90 seconds.<br><br>
-             💡 Crypto works too: <b>BINANCE:BTCUSDT</b>, qty <b>0.015</b>, entry in USD.</div>`;
+             Crypto works too: <b>BINANCE:BTCUSDT</b>, qty <b>0.015</b>, entry in USD.</div>`;
 
         const closedTotal = (pf.closed || []).reduce((s, c) => s + (c.realizedIDR || 0), 0);
         const closedLog = (pf.closed || []).length ? `
@@ -972,20 +1126,21 @@
         if (idr && idr['Perf.1M'] > 0.5) macroTxt += ` Rupiah is weakening (USD/IDR ${fmtPrice(idr.close)}, ${fmtPct(idr['Perf.1M'])} this month) — that pressures Indonesian stocks, especially banks.`;
         else if (idr && idr['Perf.1M'] < -0.5) macroTxt += ` Rupiah is strengthening — a tailwind for Indonesian stocks.`;
         if (idx && idx['Perf.1M'] < -5) macroTxt += ` The IDX index is down ${fmtPct(idx['Perf.1M'])} this month — this is a bear market; bounces are not the same as recoveries.`;
-        items.push({ ic: regime.label === 'RISK-ON' ? '🟢' : regime.label === 'RISK-OFF' ? '🔴' : '🟡', tt: `Market mood: ${regime.label}`, tx: macroTxt });
+        const regimeColor = regime.label === 'RISK-ON' ? 'var(--up)' : regime.label === 'RISK-OFF' ? 'var(--down)' : 'var(--warn)';
+        items.push({ tag: 'MACRO', color: regimeColor, tt: `Market mood: ${regime.label}`, tx: macroTxt });
 
         const top = radarRows.find((r) => r.score >= 55);
         if (top) {
-          items.push({ ic: '🎯', tt: `Healthiest chart right now: ${top.disp} (score ${top.score}/100)`,
-            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan with entry, stop and targets.` });
+          items.push({ tag: 'SETUP', color: 'var(--accent)', tt: `Healthiest chart right now: ${top.disp} (score ${top.score}/100)`,
+            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan and the 4-week projection.` });
         } else {
-          items.push({ ic: '🛡️', tt: 'No strong setups today',
+          items.push({ tag: 'CASH', color: '#5a6273', tt: 'No strong setups today',
             tx: 'Nothing scores above 55/100 in the radar. The smartest trade is often no trade — keeping your cash safe IS a position.' });
         }
 
         const avoid = radarRows.filter((r) => r.score < 40).slice(-3).map((r) => r.disp);
         if (avoid.length) {
-          items.push({ ic: '🚫', tt: `Stay away from: ${avoid.join(', ')}`,
+          items.push({ tag: 'AVOID', color: 'var(--down)', tt: `Stay away from: ${avoid.join(', ')}`,
             tx: 'These are still in falling trends. "It’s cheap now" is how people lose money in downtrends — cheap can always get cheaper.' });
         }
 
@@ -994,17 +1149,17 @@
           let tx = `Total ${fmtIDR(pfValue.totalIDR)} · today ${fmtIDRsigned(pfValue.dayIDR)}.`;
           if (worst && worst.pnlPct < -8) tx += ` Biggest drag: ${shortSym(worst.sym)} (${fmtPct(worst.pnlPct)}). Ask yourself the honest question — would you buy it again today? If not, why are you still holding it?`;
           else tx += ' No position needs emergency attention. Check the radar before adding anything new.';
-          items.push({ ic: pfValue.pnlIDR >= 0 ? '💚' : '💛', tt: `Your PnL: ${fmtIDRsigned(pfValue.pnlIDR)} (${fmtPct(pfValue.pnlPct)})`, tx });
+          items.push({ tag: 'P&L', color: pfValue.pnlIDR >= 0 ? 'var(--up)' : 'var(--warn)', tt: `Your PnL: ${fmtIDRsigned(pfValue.pnlIDR)} (${fmtPct(pfValue.pnlPct)})`, tx });
         } else {
-          items.push({ ic: '📒', tt: 'Track your real PnL here',
+          items.push({ tag: 'P&L', color: '#5a6273', tt: 'Track your real PnL here',
             tx: 'Add what you actually own in “My portfolio” below (symbol, amount, entry price). This page will then mark it to market live and tell you exactly where you stand — in Rupiah.' });
         }
 
         const dayIdx = Math.floor(Date.now() / 86_400_000) % DAILY_TIPS.length;
-        items.push({ ic: '💡', tt: 'Rule of the day', tx: DAILY_TIPS[dayIdx] });
+        items.push({ tag: 'RULE', color: '#5a6273', tt: 'Rule of the day', tx: DAILY_TIPS[dayIdx] });
 
         document.getElementById('brief-body').innerHTML = items.map((i) =>
-          `<div class="brief-item"><div class="ic">${i.ic}</div><div><div class="tt">${i.tt}</div><div class="tx">${i.tx}</div></div></div>`).join('');
+          `<div class="brief-item"><span class="tag" style="background:${i.color}">${i.tag}</span><div><div class="tt">${i.tt}</div><div class="tx">${i.tx}</div></div></div>`).join('');
       }
 
       function renderQuantPanel(scan, klines, usdidr) {
@@ -1018,6 +1173,10 @@
         const verdict = verdictOf(sc, s);
         const plan = tradePlan(s, verdict);
         const metrics = klines ? seriesMetrics(klines.map((k) => k.c)) : null;
+        const proj = klines
+          ? mcProjection(klines.map((k) => k.c), s.close, plan.stop, plan.t1, SYMBOL)
+          : gbmProjection(s.close, s['Volatility.M'], plan.stop, plan.t1);
+        proj._stop = plan.stop; proj._t1 = plan.t1;
         const horizons = klines
           ? horizonReturns(klines.map((k) => k.c))
           : [
@@ -1084,7 +1243,7 @@
               <div class="scorebar"><div style="width:${sc.total}%;background:${scoreColor}"></div></div>
               <div class="num" style="font-size:12px;color:var(--muted)">Score <b style="color:${scoreColor}">${sc.total}/100</b>
                 — trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
-              <div class="q-simple">${SIMPLE_TERMS[verdict.kind]}</div>
+              <div class="q-simple" style="border-left-color:${VERDICT_COLOR[verdict.kind]}">${SIMPLE_TERMS[verdict.kind]}</div>
               <div class="q-reason">${trendRegime}. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
                 ${fmtPct(s['Perf.W'])} this week, ${fmtPct(s['Perf.1M'])} this month.
                 At ${(sc.pos * 100).toFixed(0)}% of its 52-week range.</div>
@@ -1114,6 +1273,8 @@
               <div class="size-out num" id="q-size-out" style="margin-top:10px"></div>
             </div>
           </div>
+
+          ${projectionHTML(proj, s.close)}
 
           <div>
             <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
