@@ -301,6 +301,23 @@
       .tfseg button:not(.active):hover { color: var(--text); }
       .tf-hold { font-size: 11px; color: var(--subtle); }
 
+      /* Short-side + alerts + paper trading + backtest */
+      .v-short { background: #8e5bd1; }
+      .b-short { background: #8e5bd1; }
+      .toast-host { position: fixed; right: 16px; bottom: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; max-width: 340px; }
+      .toast {
+        background: var(--panel); border: 1px solid var(--accent); border-radius: 10px;
+        padding: 10px 14px; font-size: 13px; box-shadow: 0 6px 24px rgb(0 0 0 / .35);
+      }
+      .toast b { display: block; margin-bottom: 2px; }
+      .alerts-box { border-top: 1px solid var(--border); padding: 10px 14px 12px; }
+      .alerts-box h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--subtle); }
+      .alert-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+      .alert-row .lvl { font-weight: 700; }
+      .alert-row.fired { opacity: .55; text-decoration: line-through; }
+      .bt-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+      .paper-note { padding: 0 14px 12px; font-size: 11px; color: var(--subtle); line-height: 1.5; }
+
       .pos { color: var(--up); font-weight: 700; }
       .neg { color: var(--down); font-weight: 700; }
       .neu { color: var(--muted); font-weight: 600; }
@@ -382,6 +399,7 @@
             <span class="sub">Saved on this device · marks to market live</span>
           </div>
           <div id="pf-body"><div class="q-loading">Loading…</div></div>
+          <div id="alerts-host"></div>
         </section>
         <section class="panel" id="radar">
           <div class="panel-head">
@@ -393,6 +411,18 @@
           </div>
         </section>
       </div>
+
+      <!-- Paper trading scoreboard -->
+      <section class="panel" id="paper">
+        <div class="panel-head">
+          <h2>Paper trading — signal scoreboard</h2>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="sub">Every BUY / SHORT signal the radar fires is logged and tracked automatically — no money involved</span>
+            <button class="refresh" id="paper-clear" title="Delete all recorded signals">Clear</button>
+          </span>
+        </div>
+        <div id="paper-body"><div class="q-loading">Waiting for first scan…</div></div>
+      </section>
 
       <!-- Quick picks -->
       <div class="chips" id="chips"></div>
@@ -502,10 +532,32 @@
       let MODAL = saved.modal || 10_000_000;
       let RISKPCT = saved.riskPct || 1;
       let TF = saved.tf || '1D';
+      let FEEPCT = saved.feePct ?? 0.15;  // broker/exchange fee, % per side
+      let SLIPPCT = saved.slipPct ?? 0.05; // slippage + spread, % per side
+
+      /** Round-trip cost as a fraction of price (both sides, fees + slippage). */
+      const costFrac = () => 2 * (FEEPCT + SLIPPCT) / 100;
 
       function persist() {
-        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT, tf: TF })); } catch {}
+        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT, tf: TF, feePct: FEEPCT, slipPct: SLIPPCT })); } catch {}
       }
+
+      /* Price alerts: fire while the tab is open (checked on each 90s scan). */
+      const ALERT_KEY = 'td:alerts';
+      function loadAlerts() { try { return JSON.parse(localStorage.getItem(ALERT_KEY)) || []; } catch { return []; } }
+      function saveAlerts(a) { try { localStorage.setItem(ALERT_KEY, JSON.stringify(a.slice(-60))); } catch {} }
+
+      /* Paper trading: every radar BUY/SHORT signal is logged and tracked. */
+      const PAPER_KEY = 'td:paper';
+      function loadPaper() {
+        try { return JSON.parse(localStorage.getItem(PAPER_KEY)) || { last: {}, signals: [] }; }
+        catch { return { last: {}, signals: [] }; }
+      }
+      function savePaper(p) {
+        p.signals = p.signals.slice(-200);
+        try { localStorage.setItem(PAPER_KEY, JSON.stringify(p)); } catch {}
+      }
+      const TF_BAR_MS = { '15': 9e5, '60': 3.6e6, '240': 1.44e7, '1D': 8.64e7, '1W': 6.048e8 };
 
       /* ---------------- Timeframe engine ----------------
        * Everything downstream (indicators, ATR stops/targets, projections,
@@ -833,14 +885,17 @@
         const rng = mulberry(hashStr(sym + TF + new Date().toISOString().slice(0, 10)));
         const N = 1500;
         const perBar = Array.from({ length: H }, () => []);
+        const short = t1 < spot; // short setup: TP below, stop above
         let touchT1 = 0, touchStop = 0, t1First = 0;
         for (let n = 0; n < N; n++) {
           let p = spot, hT = false, hS = false, first = false;
           for (let d = 0; d < H; d++) {
             p *= Math.exp(rets[Math.floor(rng() * rets.length)]);
             perBar[d].push(p);
-            if (!hT && p >= t1) { hT = true; if (!hS) first = true; }
-            if (!hS && p <= stop) hS = true;
+            const hitTp = short ? p <= t1 : p >= t1;
+            const hitSl = short ? p >= stop : p <= stop;
+            if (!hT && hitTp) { hT = true; if (!hS) first = true; }
+            if (!hS && hitSl) hS = true;
           }
           if (hT) touchT1++; if (hS) touchStop++; if (first) t1First++;
         }
@@ -868,10 +923,12 @@
           bands.push(b);
         }
         const sT = sd * Math.sqrt(H);
-        const pStop = Math.min(1, 2 * normCdf(Math.log(stop / spot) / sT));
-        const pT1 = Math.min(1, 2 * (1 - normCdf(Math.log(t1 / spot) / sT)));
+        // Touch probability of a level via reflection principle — works both sides of spot.
+        const pTouch = (lvl) => Math.min(1, lvl < spot
+          ? 2 * normCdf(Math.log(lvl / spot) / sT)
+          : 2 * (1 - normCdf(Math.log(lvl / spot) / sT)));
         return {
-          bands, H, pT1, pStop, pT1First: null,
+          bands, H, pT1: pTouch(t1), pStop: pTouch(stop), pT1First: null,
           method: `Parametric model (driftless GBM); per-${barName}-bar volatility derived from the ${barName} ATR (range ≈ 1.6 sigma). An approximation — touch probabilities use the reflection principle; treat as rough bands.`,
         };
       }
@@ -880,8 +937,8 @@
       function fanSVG(proj, spot, stop, t1, quarterLabels) {
         const { bands, H } = proj;
         const W = 680, Ht = 200, mL = 62, mR = 10, mT = 12, mB = 24;
-        const lo = Math.min(stop, ...bands.map((b) => b.p5)) * 0.995;
-        const hi = Math.max(t1, ...bands.map((b) => b.p95)) * 1.005;
+        const lo = Math.min(stop, t1, ...bands.map((b) => b.p5)) * 0.995;
+        const hi = Math.max(stop, t1, ...bands.map((b) => b.p95)) * 1.005;
         const X = (d) => mL + (d / H) * (W - mL - mR);
         const Y = (v) => mT + (1 - (v - lo) / (hi - lo)) * (Ht - mT - mB);
         const fwd = (k) => bands.map((b, i) => `${X(i + 1).toFixed(1)},${Y(b[k]).toFixed(1)}`).join(' ');
@@ -932,6 +989,171 @@
           </div>`;
       }
 
+      /* ------------------------------------------------------------------ *
+       * Indicators from raw candles (for the backtest)                      *
+       * ------------------------------------------------------------------ */
+      function emaArr(vals, period) {
+        const out = new Array(vals.length).fill(null);
+        let sum = 0;
+        for (let i = 0; i < vals.length; i++) {
+          if (i < period) { sum += vals[i]; if (i === period - 1) out[i] = sum / period; continue; }
+          out[i] = vals[i] * (2 / (period + 1)) + out[i - 1] * (1 - 2 / (period + 1));
+        }
+        return out;
+      }
+      function rsiArr(closes, period = 14) {
+        const out = new Array(closes.length).fill(null);
+        let g = 0, l = 0;
+        for (let i = 1; i < closes.length; i++) {
+          const ch = closes[i] - closes[i - 1];
+          const up = Math.max(ch, 0), dn = Math.max(-ch, 0);
+          if (i <= period) { g += up; l += dn; if (i === period) { g /= period; l /= period; out[i] = 100 - 100 / (1 + (l === 0 ? 1e9 : g / l)); } continue; }
+          g = (g * (period - 1) + up) / period;
+          l = (l * (period - 1) + dn) / period;
+          out[i] = 100 - 100 / (1 + (l === 0 ? 1e9 : g / l));
+        }
+        return out;
+      }
+      function atrArr(k, period = 14) {
+        const out = new Array(k.length).fill(null);
+        let acc = 0;
+        for (let i = 1; i < k.length; i++) {
+          const tr = Math.max(k[i].h - k[i].l, Math.abs(k[i].h - k[i - 1].c), Math.abs(k[i].l - k[i - 1].c));
+          if (i <= period) { acc += tr; if (i === period) out[i] = acc / period; continue; }
+          out[i] = (out[i - 1] * (period - 1) + tr) / period;
+        }
+        return out;
+      }
+      function adxArr(k, period = 14) {
+        const n = k.length;
+        const out = new Array(n).fill(null);
+        let trS = 0, pS = 0, mS = 0, dxAcc = 0, dxCount = 0, adx = null;
+        let prevTr = null, prevP = null, prevM = null;
+        for (let i = 1; i < n; i++) {
+          const up = k[i].h - k[i - 1].h, dn = k[i - 1].l - k[i].l;
+          const pDM = up > dn && up > 0 ? up : 0;
+          const mDM = dn > up && dn > 0 ? dn : 0;
+          const tr = Math.max(k[i].h - k[i].l, Math.abs(k[i].h - k[i - 1].c), Math.abs(k[i].l - k[i - 1].c));
+          if (i <= period) {
+            trS += tr; pS += pDM; mS += mDM;
+            if (i === period) { prevTr = trS; prevP = pS; prevM = mS; }
+            continue;
+          }
+          prevTr = prevTr - prevTr / period + tr;
+          prevP = prevP - prevP / period + pDM;
+          prevM = prevM - prevM / period + mDM;
+          const pDI = prevTr > 0 ? (100 * prevP) / prevTr : 0;
+          const mDI = prevTr > 0 ? (100 * prevM) / prevTr : 0;
+          const dx = pDI + mDI > 0 ? (100 * Math.abs(pDI - mDI)) / (pDI + mDI) : 0;
+          if (adx == null) {
+            dxAcc += dx; dxCount++;
+            if (dxCount === period) { adx = dxAcc / period; out[i] = adx; }
+          } else {
+            adx = (adx * (period - 1) + dx) / period;
+            out[i] = adx;
+          }
+        }
+        return out;
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Backtest: replay the score signal (long + short) over history,      *
+       * entries at signal close, exits at stop / TP1 / time-stop,           *
+       * costs included. Conservative: stop wins if both hit in one bar.     *
+       * ------------------------------------------------------------------ */
+      function backtest(klines, cost, cfg) {
+        const closes = klines.map((x) => x.c);
+        const e20 = emaArr(closes, 20), e50 = emaArr(closes, 50), e200 = emaArr(closes, 200);
+        const e12 = emaArr(closes, 12), e26 = emaArr(closes, 26);
+        const macdLine = closes.map((_, i) => (e12[i] != null && e26[i] != null ? e12[i] - e26[i] : null));
+        const firstMacd = macdLine.findIndex((v) => v != null);
+        const sigTail = emaArr(macdLine.slice(firstMacd), 9);
+        const macdSig = macdLine.map((_, i) => (i >= firstMacd ? sigTail[i - firstMacd] : null));
+        const rsi = rsiArr(closes), atr = atrArr(klines), adx = adxArr(klines);
+        const maxBars = cfg.projBars * 2;
+        const trades = [];
+        let open = null;
+        const start = 210;
+        for (let i = start; i < klines.length; i++) {
+          if (open) {
+            const { dir, entry, stop, t1, riskNet, idx } = open;
+            const hi = klines[i].h, lo = klines[i].l;
+            let exit = null, how = null;
+            if (dir === 'long') {
+              if (lo <= stop) { exit = stop; how = 'stop'; }
+              else if (hi >= t1) { exit = t1; how = 'tp'; }
+            } else {
+              if (hi >= stop) { exit = stop; how = 'stop'; }
+              else if (lo <= t1) { exit = t1; how = 'tp'; }
+            }
+            if (!exit && i - idx >= maxBars) { exit = closes[i]; how = 'time'; }
+            if (exit) {
+              const gross = dir === 'long' ? exit - entry : entry - exit;
+              const netR = (gross - entry * cost) / riskNet;
+              trades.push({ dir, netR, how });
+              open = null;
+            }
+            continue; // one position at a time
+          }
+          if (e200[i] == null || adx[i] == null || rsi[i] == null || macdSig[i] == null || atr[i] == null) continue;
+          const w0 = Math.max(0, i - 364);
+          const win = closes.slice(w0, i + 1);
+          const snap = {
+            close: closes[i], EMA20: e20[i], EMA50: e50[i], EMA200: e200[i],
+            RSI: rsi[i], 'MACD.macd': macdLine[i], 'MACD.signal': macdSig[i],
+            ADX: adx[i], ATR: atr[i],
+            'Perf.W': i >= 7 ? (closes[i] / closes[i - 7] - 1) * 100 : 0,
+            'Perf.1M': i >= 28 ? (closes[i] / closes[i - 28] - 1) * 100 : 0,
+            price_52_week_high: Math.max(...win), price_52_week_low: Math.min(...win),
+          };
+          const scL = scoreSnapshot(snap), scS = scoreShortSnapshot(snap);
+          let dir = null;
+          if (scL.total >= 70 && snap.ADX >= 20 && scL.total >= scS.total) dir = 'long';
+          else if (scS.total >= 70 && snap.ADX >= 20 && scS.total > scL.total) dir = 'short';
+          if (dir) {
+            const entry = closes[i], cpu = entry * cost;
+            let stop, riskNet, t1;
+            if (dir === 'long') { stop = entry - 1.5 * atr[i]; riskNet = entry - stop + cpu; t1 = entry + 1.5 * riskNet + cpu; }
+            else { stop = entry + 1.5 * atr[i]; riskNet = stop - entry + cpu; t1 = entry - (1.5 * riskNet + cpu); }
+            open = { dir, entry, stop, t1, riskNet, idx: i };
+          }
+        }
+        const wins = trades.filter((t) => t.netR > 0);
+        const losses = trades.filter((t) => t.netR <= 0);
+        const sum = (a) => a.reduce((s, t) => s + t.netR, 0);
+        const totalR = sum(trades);
+        const buyHold = (closes[closes.length - 1] / closes[start] - 1) * 100;
+        return {
+          n: trades.length,
+          winRate: trades.length ? (wins.length / trades.length) * 100 : null,
+          avgWin: wins.length ? sum(wins) / wins.length : null,
+          avgLoss: losses.length ? sum(losses) / losses.length : null,
+          expectancy: trades.length ? totalR / trades.length : null,
+          profitFactor: losses.length && sum(losses) !== 0 ? Math.abs(sum(wins) / sum(losses)) : null,
+          totalR, buyHold,
+          longs: trades.filter((t) => t.dir === 'long').length,
+          shorts: trades.filter((t) => t.dir === 'short').length,
+          curve: trades.reduce((acc, t) => { acc.push((acc.length ? acc[acc.length - 1] : 0) + t.netR); return acc; }, []),
+          bars: klines.length - start,
+        };
+      }
+
+      function equitySVG(curve) {
+        if (!curve.length) return '';
+        const W = 680, H = 110, mL = 40, mR = 8, mT = 8, mB = 16;
+        const lo = Math.min(0, ...curve), hi = Math.max(0, ...curve);
+        const X = (i) => mL + (i / Math.max(1, curve.length - 1)) * (W - mL - mR);
+        const Y = (v) => mT + (1 - (v - lo) / Math.max(1e-9, hi - lo)) * (H - mT - mB);
+        const pts = curve.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+        const last = curve[curve.length - 1];
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Backtest equity curve in R units">
+          <line x1="${mL}" y1="${Y(0)}" x2="${W - mR}" y2="${Y(0)}" stroke="var(--border)" stroke-width="1"/>
+          <polyline points="${pts}" fill="none" stroke="${last >= 0 ? 'var(--up)' : 'var(--down)'}" stroke-width="2"/>
+          <text x="${mL - 5}" y="${Y(0) + 4}" text-anchor="end" font-size="10" fill="var(--subtle)">0R</text>
+          <text x="${W - mR - 2}" y="${Y(last) - 6}" text-anchor="end" font-size="10.5" fill="var(--muted)">${last >= 0 ? '+' : ''}${last.toFixed(1)}R</text>
+        </svg>`;
+      }
+
       function scoreSnapshot(s) {
         let trend = 0;
         const c = s.close;
@@ -963,6 +1185,38 @@
         return { total, trend, mom, qual, posScore, pos, rsi, upTrend };
       }
 
+      /** Mirror of the long score: rewards clean, strong downtrends (for shorting). */
+      function scoreShortSnapshot(s) {
+        let trend = 0;
+        const c = s.close;
+        if (c < s.EMA20) trend += 7;
+        if (s.EMA20 < s.EMA50) trend += 7;
+        if (s.EMA50 < s.EMA200) trend += 7;
+        if (c < s.EMA200) trend += 7;
+        if (s['MACD.macd'] < s['MACD.signal']) trend += 7; // /35
+        let mom = 0;
+        const rsi = s.RSI;
+        if (rsi >= 35 && rsi <= 55) mom += 15;      // healthy downtrend zone
+        else if (rsi >= 25 && rsi < 35) mom += 10;
+        else if (rsi > 55 && rsi <= 70) mom += 8;
+        else if (rsi < 25) mom += 3;                 // oversold: bounce risk
+        else mom += 5;
+        if (s['Perf.W'] < 0) mom += 5;
+        if (s['Perf.1M'] < 0) mom += 5; // /25
+        let qual = 0;
+        const downTrend = c < s.EMA50;
+        if (s.ADX >= 25) qual = downTrend ? 20 : 5;
+        else if (s.ADX >= 20) qual = downTrend ? 12 : 6;
+        else qual = 6; // /20
+        let posScore = 0;
+        const hi = s.price_52_week_high, lo = s.price_52_week_low;
+        const pos = hi > lo ? (s.close - lo) / (hi - lo) : 0.5;
+        if (c < s.EMA200) posScore = pos > 0.6 ? 20 : pos >= 0.3 ? 14 : 8; // room to fall
+        else posScore = pos > 0.8 ? 8 : 4;
+        const total = Math.round(trend + mom + qual + posScore);
+        return { total, trend, mom, qual, posScore, pos, rsi };
+      }
+
       function verdictOf(sc, s) {
         const above200 = s.close > s.EMA200;
         if (sc.total >= 70 && s.ADX >= 20) return { label: 'SWING — BUY ZONE', short: 'BUY ZONE', cls: 'v-green', b: 'b-green', kind: 'buy' };
@@ -973,24 +1227,65 @@
           : { label: 'AVOID LONGS — DOWNTREND', short: 'AVOID', cls: 'v-red', b: 'b-red', kind: 'avoid' };
       }
 
+      /**
+       * Evaluate both directions; a short setup wins only when it is strong
+       * (>= 70, real trend) and clearly better than the long case.
+       */
+      function verdictBoth(s) {
+        const scL = scoreSnapshot(s);
+        const scS = scoreShortSnapshot(s);
+        if (scS.total >= 70 && s.ADX >= 20 && scS.total > scL.total) {
+          return {
+            dir: 'short', sc: scS, other: scL,
+            verdict: { label: 'SWING — SHORT SETUP', short: 'SHORT', cls: 'v-short', b: 'b-short', kind: 'short' },
+          };
+        }
+        return { dir: 'long', sc: scL, other: scS, verdict: verdictOf(scL, s) };
+      }
+
       const SIMPLE_TERMS = {
         buy: '<b>In plain terms:</b> the wind is at your back — this is rising with real strength. You may buy, but only with the stop loss set below. No stop, no trade.',
         wait: '<b>In plain terms:</b> promising, but not proven yet. Let it show strength first (the trigger below) — missing the first 2% is cheaper than catching a fake move.',
         range: '<b>In plain terms:</b> price is going sideways, like a car stuck in traffic. Skip it — there are better uses of your money and attention.',
         weak: '<b>In plain terms:</b> the long-term trend is still OK but it’s losing steam. If you own it, tighten your exit. If you don’t own it — no rush at all.',
         avoid: '<b>In plain terms:</b> this is still falling. Buying now is catching a falling knife — it looks cheap, then gets cheaper. Wait until it stops falling first.',
+        short: '<b>In plain terms:</b> this is falling with real strength — the setup is to profit from the fall (a short). Shorting requires a margin or futures account and is riskier than buying. If you cannot short (IDX retail accounts mostly cannot), read this as: stay out, or exit longs.',
       };
-      const VERDICT_COLOR = { buy: 'var(--up)', wait: 'var(--warn)', range: '#5a6273', weak: '#5a6273', avoid: 'var(--down)' };
+      const VERDICT_COLOR = { buy: 'var(--up)', wait: 'var(--warn)', range: '#5a6273', weak: '#5a6273', avoid: 'var(--down)', short: '#8e5bd1' };
 
+      /**
+       * Direction-aware trade plan, net of costs.
+       * The stop stays at market structure (1.5x ATR); the take-profit levels are
+       * pushed out so they deliver 1.5R / 2.5R AFTER the round-trip fee+slippage,
+       * and the risk-per-unit used for sizing includes those costs too.
+       */
       function tradePlan(s, verdict) {
-        const atr = s.ATR, c = s.close;
-        let a = verdict.kind === 'buy' ? Math.max(s.EMA20, c - 0.5 * atr) : s.EMA20;
-        let b = verdict.kind === 'buy' ? c : s.EMA50 > s.EMA20 ? s.EMA50 : s.EMA20 * 1.01;
+        const atr = s.ATR, c = s.close, cost = costFrac();
+        const dir = verdict.kind === 'short' ? 'short' : 'long';
+        let a, b;
+        if (dir === 'short') {
+          a = verdict.kind === 'short' ? Math.min(s.EMA20, c + 0.5 * atr) : s.EMA20;
+          b = c;
+        } else {
+          a = verdict.kind === 'buy' ? Math.max(s.EMA20, c - 0.5 * atr) : s.EMA20;
+          b = verdict.kind === 'buy' ? c : s.EMA50 > s.EMA20 ? s.EMA50 : s.EMA20 * 1.01;
+        }
         const entryLow = Math.min(a, b), entryHigh = Math.max(a, b);
         const entry = (entryLow + entryHigh) / 2;
-        const stop = entry - 1.5 * atr;
-        const risk = entry - stop;
-        return { entryLow, entryHigh, entry, stop, t1: entry + 1.5 * risk, t2: entry + 2.5 * risk, riskPerUnit: risk };
+        const costPerUnit = entry * cost;
+        let stop, t1, t2, riskNet;
+        if (dir === 'short') {
+          stop = entry + 1.5 * atr;
+          riskNet = (stop - entry) + costPerUnit;
+          t1 = entry - (1.5 * riskNet + costPerUnit);
+          t2 = entry - (2.5 * riskNet + costPerUnit);
+        } else {
+          stop = entry - 1.5 * atr;
+          riskNet = (entry - stop) + costPerUnit;
+          t1 = entry + 1.5 * riskNet + costPerUnit;
+          t2 = entry + 2.5 * riskNet + costPerUnit;
+        }
+        return { dir, entryLow, entryHigh, entry, stop, t1, t2, riskPerUnit: riskNet, costPerUnit, costPct: cost * 100 };
       }
 
       const fmtPct = (v, d = 1) =>
@@ -1018,6 +1313,182 @@
         if (ratio >= 0.75) return { label: 'RISK-ON', color: 'var(--up)', note: 'Tailwind for stocks & crypto' };
         if (ratio <= 0.25) return { label: 'RISK-OFF', color: 'var(--down)', note: 'Defensive — smaller positions' };
         return { label: 'MIXED', color: 'var(--warn)', note: 'Selective — follow the trend, size down' };
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Paper trading: log every radar BUY/SHORT transition, track outcome. *
+       * ------------------------------------------------------------------ */
+      function paperProcess(scan, radarRows) {
+        const p = loadPaper();
+        const cost = costFrac();
+        for (const r of radarRows) {
+          const key = r.sym + '|' + TF;
+          const prev = p.last[key];
+          if ((r.kind === 'buy' || r.kind === 'short') && prev !== r.kind) {
+            const q = scan[r.sym];
+            if (q && q.close != null && q.ATR != null) {
+              const dir = r.kind === 'short' ? 'short' : 'long';
+              const entry = q.close, cpu = entry * cost;
+              let stop, riskNet, t1;
+              if (dir === 'short') { stop = entry + 1.5 * q.ATR; riskNet = stop - entry + cpu; t1 = entry - (1.5 * riskNet + cpu); }
+              else { stop = entry - 1.5 * q.ATR; riskNet = entry - stop + cpu; t1 = entry + 1.5 * riskNet + cpu; }
+              p.signals.push({
+                id: 's' + Date.now() + Math.random().toString(36).slice(2, 6),
+                sym: r.sym, tf: TF, dir, t: Date.now(), entry, stop, t1, status: 'open',
+              });
+            }
+          }
+          p.last[key] = r.kind;
+        }
+        const now = Date.now();
+        for (const sig of p.signals) {
+          if (sig.status !== 'open') continue;
+          const q = scan[sig.sym];
+          if (!q || q.close == null) continue;
+          const price = q.close, cpu = sig.entry * costFrac();
+          const riskNet = sig.dir === 'short' ? sig.stop - sig.entry + cpu : sig.entry - sig.stop + cpu;
+          const hitSl = sig.dir === 'short' ? price >= sig.stop : price <= sig.stop;
+          const hitTp = sig.dir === 'short' ? price <= sig.t1 : price >= sig.t1;
+          const cfgS = TF_CONFIG[sig.tf] || TF_CONFIG['1D'];
+          const expired = now > sig.t + (TF_BAR_MS[sig.tf] || 8.64e7) * cfgS.projBars * 2;
+          let exit = null, status = null;
+          if (hitSl) { exit = sig.stop; status = 'stopped'; }
+          else if (hitTp) { exit = sig.t1; status = 'tp'; }
+          else if (expired) { exit = price; status = 'expired'; }
+          if (status) {
+            const gross = sig.dir === 'short' ? sig.entry - exit : exit - sig.entry;
+            sig.netR = Math.round(((gross - cpu) / riskNet) * 100) / 100;
+            sig.exit = exit; sig.status = status; sig.closedAt = now;
+          } else {
+            const gross = sig.dir === 'short' ? sig.entry - price : price - sig.entry;
+            sig.liveR = Math.round(((gross - cpu) / riskNet) * 100) / 100;
+          }
+        }
+        savePaper(p);
+        return p;
+      }
+
+      function renderPaper(p) {
+        const host = document.getElementById('paper-body');
+        const sigs = [...p.signals].sort((a, b) => b.t - a.t);
+        const closed = sigs.filter((s) => s.status !== 'open');
+        const opens = sigs.filter((s) => s.status === 'open');
+        const tps = closed.filter((s) => s.status === 'tp');
+        const totalR = closed.reduce((s, x) => s + (x.netR || 0), 0);
+        if (!sigs.length) {
+          host.innerHTML = '<div class="pf-empty">No signals recorded yet. When the radar flips any market to BUY or SHORT on the timeframe you are viewing, it gets logged here automatically with its entry, stop and take-profit — and tracked to the end. Come back in a few days and you will see how honest the signals really are.</div>';
+          return;
+        }
+        const chip = (lab, val, cls = '') => `<div class="pf-chip"><div class="lab">${lab}</div><div class="val num ${cls}">${val}</div></div>`;
+        const age = (t) => {
+          const m = Math.round((Date.now() - t) / 60000);
+          if (m < 60) return m + 'm';
+          if (m < 2880) return Math.round(m / 60) + 'h';
+          return Math.round(m / 1440) + 'd';
+        };
+        const stClr = { tp: 'pos', stopped: 'neg', expired: 'neu', open: 'neu' };
+        const stLab = { tp: 'TP HIT', stopped: 'STOPPED', expired: 'EXPIRED', open: 'OPEN' };
+        host.innerHTML = `
+          <div class="pf-summary num" style="padding-bottom:10px">
+            ${chip('Signals open', opens.length)}
+            ${chip('Closed', closed.length)}
+            ${chip('Hit rate', closed.length ? Math.round(tps.length / closed.length * 100) + '%' : '—')}
+            ${chip('Avg net R', closed.length ? (totalR / closed.length).toFixed(2) + 'R' : '—', totalR >= 0 ? 'pos' : 'neg')}
+            ${chip('Total net R', (totalR >= 0 ? '+' : '') + totalR.toFixed(1) + 'R', totalR >= 0 ? 'pos' : 'neg')}
+          </div>
+          <div class="pf-tablewrap" style="padding-bottom:12px"><table class="pf num">
+            <thead><tr><th>Market</th><th>TF</th><th>Dir</th><th>Entry</th><th>Stop</th><th>TP</th><th>Status</th><th>Net R</th><th>Age</th></tr></thead>
+            <tbody>${sigs.slice(0, 12).map((s) => `
+              <tr>
+                <td class="symcell" data-open="${s.sym}" style="text-align:left">${shortSym(s.sym)}</td>
+                <td>${TF_CONFIG[s.tf] ? TF_CONFIG[s.tf].label : s.tf}</td>
+                <td><span class="badge ${s.dir === 'short' ? 'b-short' : 'b-green'}">${s.dir.toUpperCase()}</span></td>
+                <td>${fmtPrice(s.entry)}</td><td>${fmtPrice(s.stop)}</td><td>${fmtPrice(s.t1)}</td>
+                <td class="${stClr[s.status]}">${stLab[s.status]}</td>
+                <td class="${(s.netR ?? s.liveR ?? 0) >= 0 ? 'pos' : 'neg'}">${((s.netR ?? s.liveR ?? 0) >= 0 ? '+' : '')}${(s.netR ?? s.liveR ?? 0).toFixed(2)}R</td>
+                <td style="color:var(--subtle)">${age(s.t)}</td>
+              </tr>`).join('')}
+            </tbody></table></div>
+          <div class="paper-note">Signals are recorded on the timeframe you are viewing when they fire, at the scan price (90s granularity, closes only — no intrabar fills). Net R includes your fee + slippage settings. This is the honest scoreboard: if it cannot make paper money, it will not make real money.</div>`;
+        host.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => setSymbol(el.dataset.open)));
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Price alerts (fire while the tab is open; checked every scan)       *
+       * ------------------------------------------------------------------ */
+      function toast(title, body) {
+        let host = document.querySelector('.toast-host');
+        if (!host) { host = document.createElement('div'); host.className = 'toast-host'; document.body.appendChild(host); }
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerHTML = `<b>${title}</b><span style="color:var(--muted);font-size:12px">${body}</span>`;
+        host.appendChild(t);
+        setTimeout(() => t.remove(), 12000);
+      }
+      function notify(title, body) {
+        toast(title, body);
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body });
+          }
+        } catch {}
+      }
+      function armPlanAlerts(plan, sym) {
+        const a = loadAlerts().filter((x) => !(x.sym === sym && !x.fired)); // re-arming replaces old un-fired alerts
+        const isShort = plan.dir === 'short';
+        a.push(
+          { id: 'a' + Date.now() + 'e', sym, level: isShort ? plan.entryLow : plan.entryHigh, dir: isShort ? 'above' : 'below', label: 'Entry zone', fired: false, t: Date.now() },
+          { id: 'a' + Date.now() + 's', sym, level: plan.stop, dir: isShort ? 'above' : 'below', label: 'Stop', fired: false, t: Date.now() },
+          { id: 'a' + Date.now() + 't', sym, level: plan.t1, dir: isShort ? 'below' : 'above', label: 'TP1', fired: false, t: Date.now() },
+        );
+        saveAlerts(a);
+        notify('Alerts armed — ' + shortSym(sym), `Entry ${fmtPrice(isShort ? plan.entryLow : plan.entryHigh)} · Stop ${fmtPrice(plan.stop)} · TP1 ${fmtPrice(plan.t1)}`);
+        renderAlerts();
+      }
+      function checkAlerts(scan) {
+        const alerts = loadAlerts();
+        let changed = false;
+        for (const a of alerts) {
+          if (a.fired) continue;
+          const q = scan[a.sym];
+          if (!q || q.close == null) continue;
+          const hit = a.dir === 'above' ? q.close >= a.level : q.close <= a.level;
+          if (hit) {
+            a.fired = true; a.firedAt = Date.now(); changed = true;
+            notify(`${a.label} — ${shortSym(a.sym)}`, `Price ${fmtPrice(q.close)} crossed ${fmtPrice(a.level)} (${a.dir})`);
+          }
+        }
+        if (changed) saveAlerts(alerts);
+      }
+      function renderAlerts() {
+        const host = document.getElementById('alerts-host');
+        if (!host) return;
+        const alerts = loadAlerts().slice().reverse().slice(0, 10);
+        const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+        const permLine = perm === 'granted'
+          ? '<span style="color:var(--up)">browser notifications on</span>'
+          : perm === 'denied'
+            ? '<span style="color:var(--warn)">notifications blocked — in-page toasts only</span>'
+            : `<button class="refresh" id="alerts-enable">Enable browser notifications</button>`;
+        host.innerHTML = `
+          <div class="alerts-box">
+            <h4>Price alerts (while this tab is open) — ${permLine}</h4>
+            ${alerts.length ? alerts.map((a) => `
+              <div class="alert-row ${a.fired ? 'fired' : ''}">
+                <span style="font-weight:700">${shortSym(a.sym)}</span>
+                <span>${a.label}</span>
+                <span class="lvl num">${a.dir === 'above' ? '≥' : '≤'} ${fmtPrice(a.level)}</span>
+                <span style="color:var(--subtle);font-size:11px">${a.fired ? 'fired' : 'armed'}</span>
+                <button class="xbtn" data-del="${a.id}" style="margin-left:auto">Remove</button>
+              </div>`).join('') : '<div style="font-size:12px;color:var(--subtle)">No alerts armed. Use the button in the trade plan to arm entry / stop / TP1 for the selected market.</div>'}
+            <div style="font-size:11px;color:var(--subtle);margin-top:6px">Checked every 90 seconds against scan prices. Not a substitute for a real stop order at your broker.</div>
+          </div>`;
+        const en = document.getElementById('alerts-enable');
+        if (en) en.addEventListener('click', () => Notification.requestPermission().then(renderAlerts));
+        host.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => {
+          saveAlerts(loadAlerts().filter((x) => x.id !== b.dataset.del));
+          renderAlerts();
+        }));
       }
 
       /* ------------------------------------------------------------------ *
@@ -1149,14 +1620,13 @@
           .map(([disp, sym]) => {
             const s = scan[sym];
             if (!s || s.close == null) return null;
-            const sc = scoreSnapshot(s);
-            const vd = verdictOf(sc, s);
-            return { disp, sym, score: sc.total, vd, perfW: s['Perf.W'], perf1M: s['Perf.1M'] };
+            const { dir, sc, verdict: vd } = verdictBoth(s);
+            return { disp, sym, score: sc.total, vd, dir, kind: vd.kind, perfW: s['Perf.W'], perf1M: s['Perf.1M'] };
           })
           .filter(Boolean)
           .sort((a, b) => b.score - a.score);
 
-        const color = (sc) => sc >= 70 ? 'var(--up)' : sc >= 55 ? 'var(--warn)' : sc >= 40 ? '#5a6273' : 'var(--down)';
+        const color = (sc, dir) => dir === 'short' ? '#8e5bd1' : sc >= 70 ? 'var(--up)' : sc >= 55 ? 'var(--warn)' : sc >= 40 ? '#5a6273' : 'var(--down)';
         document.getElementById('radar-body').innerHTML = `
           <table class="radar num">
             <thead><tr><th>#</th><th>Asset</th><th>Score</th><th>Signal</th><th style="text-align:right">1W</th><th style="text-align:right">1M</th></tr></thead>
@@ -1165,7 +1635,7 @@
                 <tr data-open="${r.sym}" title="Open ${r.sym}">
                   <td style="color:var(--subtle)">${i + 1}</td>
                   <td style="font-weight:700">${r.disp}</td>
-                  <td><div class="r-score"><div class="r-bar"><div style="width:${r.score}%;background:${color(r.score)}"></div></div><span style="min-width:24px;text-align:right">${r.score}</span></div></td>
+                  <td><div class="r-score"><div class="r-bar"><div style="width:${r.score}%;background:${color(r.score, r.dir)}"></div></div><span style="min-width:24px;text-align:right">${r.score}</span></div></td>
                   <td><span class="badge ${r.vd.b}">${r.vd.short}</span></td>
                   <td style="text-align:right" class="${clsPct(r.perfW)}">${fmtPct(r.perfW)}</td>
                   <td style="text-align:right" class="${clsPct(r.perf1M)}">${fmtPct(r.perf1M)}</td>
@@ -1211,9 +1681,12 @@
         items.push({ tag: 'MACRO', color: regimeColor, tt: `Market mood: ${regime.label}`, tx: macroTxt });
 
         const top = radarRows.find((r) => r.score >= 55);
-        if (top) {
+        if (top && top.dir === 'short') {
+          items.push({ tag: 'SHORT', color: '#8e5bd1', tt: `Strongest setup right now is a SHORT: ${top.disp} (score ${top.score}/100)`,
+            tx: `Falling with real strength (${fmtPct(top.perfW)} this week). Shorting needs a margin/futures account — if you cannot short, this is simply a market to stay out of. Click it in the radar for the full plan.` });
+        } else if (top) {
           items.push({ tag: 'SETUP', color: 'var(--accent)', tt: `Healthiest chart right now: ${top.disp} (score ${top.score}/100)`,
-            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan and the 4-week projection.` });
+            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan and projection.` });
         } else {
           items.push({ tag: 'CASH', color: '#5a6273', tt: 'No strong setups today',
             tx: 'Nothing scores above 55/100 in the radar. The smartest trade is often no trade — keeping your cash safe IS a position.' });
@@ -1251,10 +1724,12 @@
           return;
         }
         const cfg = tfc();
-        const sc = scoreSnapshot(s);
-        const verdict = verdictOf(sc, s);
+        const vb = verdictBoth(s);
+        const sc = vb.sc;
+        const verdict = vb.verdict;
         verdict.label = verdict.label.replace('SWING', cfg.style);
         const plan = tradePlan(s, verdict);
+        const isShortPlan = plan.dir === 'short';
         const varWindow = Math.max(4, Math.round(cfg.projBars / 4));
         const metrics = klines ? seriesMetrics(klines.map((k) => k.c), cfg.barsPerYear, varWindow) : null;
         const proj = klines
@@ -1340,24 +1815,34 @@
             </div>
 
             <div class="q-card">
-              <h3>Trade plan — ${cfg.hold}</h3>
+              <h3>Trade plan — ${cfg.hold}${isShortPlan ? ' · SHORT' : ''}</h3>
               <div class="plan-grid num">
                 <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} – ${fmtPrice(plan.entryHigh)}</div></div>
-                <div><div class="lab">Stop loss (1.5× ${cfg.label} ATR)</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
-                <div><div class="lab">Take profit 1 (1.5R) — sell half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
-                <div><div class="lab">Take profit 2 (2.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
+                <div><div class="lab">Stop loss (1.5× ${cfg.label} ATR ${isShortPlan ? 'above' : 'below'})</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
+                <div><div class="lab">Take profit 1 (1.5R net) — ${isShortPlan ? 'cover' : 'sell'} half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
+                <div><div class="lab">Take profit 2 (2.5R net)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
               </div>
-              <div class="plan-note"><b>Exit rules:</b> stop hit → sell, no debate, no averaging down. At TP1 sell half and move your stop to entry (now you can’t lose).
-                A ${cfg.barName} close below the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → exit the trade. RSI above 75 → take some profit.
+              <div class="plan-note">
+                <b>Costs included:</b> ${FEEPCT}% fee + ${SLIPPCT}% slippage per side = ${(costFrac() * 100).toFixed(2)}% round trip —
+                take-profit levels are pushed out so 1.5R / 2.5R are what you keep <i>after</i> costs.<br>
+                <b>Exit rules:</b> stop hit → ${isShortPlan ? 'cover' : 'sell'}, no debate, no averaging ${isShortPlan ? 'up' : 'down'}. At TP1 take half off and move your stop to entry (now you can’t lose).
+                ${isShortPlan
+                  ? `A ${cfg.barName} close above the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → cover the short. RSI below 25 → take some profit.`
+                  : `A ${cfg.barName} close below the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → exit the trade. RSI above 75 → take some profit.`}
                 ${verdict.kind === 'wait' ? `<b>Trigger to enter:</b> a ${cfg.barName} close back above the ${cfg.label} EMA-20 (` + fmtPrice(s.EMA20) + ').' : ''}
-                ${verdict.kind === 'avoid' ? `<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the ${cfg.label} EMA-200 (` + fmtPrice(s.EMA200) + ').</b>' : ''}</div>
+                ${verdict.kind === 'avoid' ? `<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the ${cfg.label} EMA-200 (` + fmtPrice(s.EMA200) + ').</b>' : ''}
+                ${isShortPlan && SYMBOL.startsWith('IDX:') ? '<b style="color:var(--warn)">IDX retail accounts generally cannot short — treat this as a strong reason to stay out or exit longs.</b>' : ''}
+              </div>
+              <button class="refresh" id="arm-alerts" style="margin-top:10px">Arm alerts: entry / stop / TP1</button>
             </div>
 
             <div class="q-card">
-              <h3>Position sizing (risk-based)</h3>
+              <h3>Position sizing &amp; costs</h3>
               <div class="sizer">
                 <div><label>Modal (IDR)</label><input id="q-modal" type="number" value="${MODAL}" min="100000" step="500000"></div>
-                <div><label>Risk per trade %</label><input id="q-risk" type="number" value="${RISKPCT}" min="0.25" max="5" step="0.25" style="width:90px"></div>
+                <div><label>Risk per trade %</label><input id="q-risk" type="number" value="${RISKPCT}" min="0.25" max="5" step="0.25" style="width:80px"></div>
+                <div><label>Fee %/side</label><input id="q-fee" type="number" value="${FEEPCT}" min="0" max="2" step="0.01" style="width:80px"></div>
+                <div><label>Slip %/side</label><input id="q-slip" type="number" value="${SLIPPCT}" min="0" max="2" step="0.01" style="width:80px"></div>
               </div>
               <div class="size-out num" id="q-size-out" style="margin-top:10px"></div>
             </div>
@@ -1365,9 +1850,43 @@
 
           ${projectionHTML(proj, s.close)}
 
+          ${(() => {
+            if (!klines || klines.length < 260) {
+              return `<div>
+                <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest — does the signal work?</h3>
+                <div class="q-card" style="font-size:12.5px;color:var(--muted);line-height:1.6">
+                  Backtesting needs full candle history, which the free feeds only provide for crypto (Binance).
+                  For ${shortSym(SYMBOL)} there is no series to replay — judge the signal via the crypto backtests and the paper-trading scoreboard, which works for every market.
+                </div></div>`;
+            }
+            const bt = backtest(klines, costFrac(), cfg);
+            const chip = (lab, val, cls = '') => `<div class="pf-chip"><div class="lab">${lab}</div><div class="val num ${cls}">${val}</div></div>`;
+            const few = bt.n < 20;
+            return `<div>
+              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Backtest — this signal on ${shortSym(SYMBOL)}, ${cfg.label} bars, costs included</h3>
+              <div class="bt-chips">
+                ${chip('Trades', bt.n + ` <span style="font-size:10px;color:var(--subtle)">(${bt.longs}L/${bt.shorts}S)</span>`)}
+                ${chip('Win rate', bt.winRate != null ? Math.round(bt.winRate) + '%' : '—')}
+                ${chip('Avg win / loss', bt.avgWin != null ? `+${bt.avgWin.toFixed(2)}R / ${bt.avgLoss?.toFixed(2)}R` : '—')}
+                ${chip('Expectancy', bt.expectancy != null ? (bt.expectancy >= 0 ? '+' : '') + bt.expectancy.toFixed(2) + 'R/trade' : '—', bt.expectancy >= 0 ? 'pos' : 'neg')}
+                ${chip('Total', (bt.totalR >= 0 ? '+' : '') + bt.totalR.toFixed(1) + 'R', bt.totalR >= 0 ? 'pos' : 'neg')}
+                ${chip('At 1% risk', fmtPct(bt.totalR * 1, 1), bt.totalR >= 0 ? 'pos' : 'neg')}
+                ${chip('Buy & hold', fmtPct(bt.buyHold, 1), clsPct(bt.buyHold))}
+              </div>
+              <div class="q-card" style="padding:8px 12px">${equitySVG(bt.curve)}</div>
+              <div style="font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.5">
+                Replays this exact score (long + short, threshold 70, ADX ≥ 20) over ${bt.bars.toLocaleString()} ${cfg.barName} bars:
+                enter at signal close, exit at stop / TP1 / time-stop (${cfg.projBars * 2} bars), your fee + slippage applied, stop assumed to fill first when both hit in one bar.
+                ${few ? '<b style="color:var(--warn)">Small sample (' + bt.n + ' trades) — read with caution.</b>' : ''}
+                ${bt.expectancy != null && bt.expectancy < 0 ? '<b style="color:var(--down)">Negative expectancy on this market/timeframe — the signal has NOT worked here. Respect that.</b>' : ''}
+                ${bt.expectancy != null && bt.expectancy >= 0.1 ? '<b style="color:var(--up)">Positive expectancy here — still no guarantee, but the signal has historically paid for its risk.</b>' : ''}
+              </div>
+            </div>`;
+          })()}
+
           <div>
             <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
-              Multi-horizon returns ${klines ? '(computed from daily closes)' : '(TradingView data)'}
+              Multi-horizon returns ${TF === '1D' && klines ? '(computed from daily closes)' : '(TradingView data)'}
             </h3>
             <div class="horiz">${horizonCells}</div>
           </div>
@@ -1419,6 +1938,18 @@
         }
         document.getElementById('q-modal').addEventListener('input', sizeOut);
         document.getElementById('q-risk').addEventListener('input', sizeOut);
+        // Fee/slippage changes shift the TP levels — re-render the panel from cached data.
+        let costTimer = null;
+        function onCost() {
+          FEEPCT = Math.max(0, +document.getElementById('q-fee').value || 0);
+          SLIPPCT = Math.max(0, +document.getElementById('q-slip').value || 0);
+          persist();
+          clearTimeout(costTimer);
+          costTimer = setTimeout(() => renderQuantPanel(scan, klines, usdidr), 500);
+        }
+        document.getElementById('q-fee').addEventListener('input', onCost);
+        document.getElementById('q-slip').addEventListener('input', onCost);
+        document.getElementById('arm-alerts').addEventListener('click', () => armPlanAlerts(plan, SYMBOL));
         sizeOut();
       }
 
@@ -1436,11 +1967,13 @@
             ...MACRO_TICKERS.map((m) => m[0]),
             ...RADAR_BASKET.map(([, s]) => s),
             ...pf.positions.map((p) => p.sym),
+            ...loadAlerts().filter((a) => !a.fired).map((a) => a.sym),
+            ...loadPaper().signals.filter((x) => x.status === 'open').map((x) => x.sym),
           ])];
           const isCrypto = /^BINANCE:.*(USDT|USDC|FDUSD)$/.test(SYMBOL);
           const [scan, klines] = await Promise.all([
             scanGlobal(tickers),
-            isCrypto ? binanceKlines(SYMBOL, tfc().binance).catch(() => null) : Promise.resolve(null),
+            isCrypto ? binanceKlines(SYMBOL, tfc().binance, 1000).catch(() => null) : Promise.resolve(null),
           ]);
           if (seq !== liveSeq) return;
 
@@ -1449,6 +1982,9 @@
           const pfValue = renderPortfolio(scan, usdidr);
           renderBriefing(scan, radarRows, pfValue, usdidr);
           renderQuantPanel(scan, klines, usdidr);
+          renderPaper(paperProcess(scan, radarRows));
+          checkAlerts(scan);
+          renderAlerts();
           document.getElementById('q-updated').textContent =
             'Updated ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta' }) + ' WIB';
         } catch (err) {
@@ -1534,6 +2070,11 @@
        * ------------------------------------------------------------------ */
       document.getElementById('theme-btn').addEventListener('click', toggleTheme);
       document.getElementById('q-refresh').addEventListener('click', refreshLive);
+      document.getElementById('paper-clear').addEventListener('click', () => {
+        if (!confirm('Delete all recorded paper-trading signals?')) return;
+        savePaper({ last: {}, signals: [] });
+        renderPaper(loadPaper());
+      });
       document.getElementById('search-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const v = document.getElementById('search-input').value;
