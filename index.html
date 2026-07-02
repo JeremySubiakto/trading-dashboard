@@ -549,7 +549,7 @@
         crypto candles by Binance public data. IDX quotes may be delayed on free feeds.
         Portfolio data lives only in your browser (localStorage); nothing is uploaded anywhere.<br />
         This dashboard analyzes and monitors; order execution happens at your broker / exchange.
-        Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto.
+        Exposure ceiling and portfolio heat discipline adapted from <a href="https://github.com/tradermonty/claude-trading-skills" target="_blank" rel="noopener">tradermonty/claude-trading-skills</a> (MIT).<br />Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto.
       </footer>
     </div>
 
@@ -1349,6 +1349,21 @@
         return { label: 'MIXED', color: 'var(--warn)', note: 'Selective, follow the trend, size down' };
       }
 
+      /**
+       * Exposure ceiling: how much of your trading capital should be in the
+       * market right now. Base level comes from the macro regime; it moves up
+       * or down with participation (the share of tracked markets showing a
+       * healthy long setup). Adapted from the exposure-coach skill in
+       * tradermonty/claude-trading-skills (MIT).
+       */
+      function exposureCeiling(regime, radarRows) {
+        const healthyLongs = radarRows.filter((r) => r.dir === 'long' && r.score >= 55).length;
+        const participation = radarRows.length ? healthyLongs / radarRows.length : 0;
+        const base = regime.label === 'RISK-ON' ? 80 : regime.label === 'MIXED' ? 50 : 20;
+        const adj = Math.round((participation - 0.3) * 50);
+        return { pct: Math.max(10, Math.min(90, base + adj)), healthyLongs };
+      }
+
       /* ------------------------------------------------------------------ *
        * Paper trading: log every radar BUY/SHORT transition, track outcome. *
        * ------------------------------------------------------------------ */
@@ -1549,7 +1564,7 @@
         return { rows, totalIDR, costIDR, pnlIDR: totalIDR - costIDR, pnlPct: costIDR ? ((totalIDR - costIDR) / costIDR) * 100 : 0, dayIDR, missing };
       }
 
-      function renderPortfolio(scan, usdidr) {
+      function renderPortfolio(scan, usdidr, ceiling) {
         const pf = loadPf();
         const host = document.getElementById('pf-body');
         const v = valuePortfolio(pf, scan, usdidr);
@@ -1571,6 +1586,11 @@
             <div class="pf-chip"><div class="lab">Unrealized PnL</div>
               <div class="val ${clsPct(v.pnlIDR)}">${fmtIDRsigned(v.pnlIDR)} <span style="font-size:12px">(${fmtPct(v.pnlPct)})</span></div></div>
             <div class="pf-chip"><div class="lab">Today</div><div class="val ${clsPct(v.dayIDR)}">${fmtIDRsigned(v.dayIDR)}</div></div>
+${ceiling && MODAL > 0 ? (() => {
+              const actual = Math.round(v.totalIDR / MODAL * 100);
+              const over = actual > ceiling.pct + 10;
+              return '<div class="pf-chip" title="How much of your modal is in the market versus the suggested ceiling for current conditions. Adapted from the exposure-coach trading skill."><div class="lab">Exposure vs ceiling</div><div class="val num" style="color:' + (over ? 'var(--down)' : 'var(--up)') + '">' + actual + '% / ' + ceiling.pct + '%</div></div>';
+            })() : ''}
             <div class="pf-chip" title="A 1-in-20 bad week could cost roughly this much. Range: uncorrelated vs fully correlated positions.">
               <div class="lab">1W VaR 95% (est.)</div>
               <div class="val" style="color:var(--warn)">${fmtIDR(varLo)}${varHi > varLo * 1.05 ? ' to ' + fmtIDR(varHi) : ''}</div></div>
@@ -1694,7 +1714,7 @@
         'Take profits at targets. Unrealized gains are the market’s money, not yours yet.',
       ];
 
-      function renderBriefing(scan, radarRows, pfValue, usdidr) {
+      function renderBriefing(scan, radarRows, pfValue, usdidr, ceiling) {
         const items = [];
         const regime = macroRegime(scan);
         const idr = scan['FX_IDC:USDIDR'];
@@ -1713,6 +1733,23 @@
         if (idx && idx['Perf.1M'] < -5) macroTxt += ` The IDX index is down ${fmtPct(idx['Perf.1M'])} this month. That is a bear market, and a bounce is not a recovery.`;
         const regimeColor = regime.label === 'RISK-ON' ? 'var(--up)' : regime.label === 'RISK-OFF' ? 'var(--down)' : 'var(--warn)';
         items.push({ tag: 'MACRO', color: regimeColor, tt: `Market mood: ${regime.label}`, tx: macroTxt });
+
+        if (ceiling) {
+          let expTx = `Based on the market mood and participation: ${ceiling.healthyLongs} of ${radarRows.length} tracked markets currently show a healthy long setup. `;
+          if (pfValue && pfValue.rows.length && MODAL > 0) {
+            const actual = Math.round(pfValue.totalIDR / MODAL * 100);
+            expTx += actual > ceiling.pct + 10
+              ? `Your positions total ${fmtIDR(pfValue.totalIDR)}, about ${actual}% of modal. That is above the ceiling. Consider trimming until conditions improve.`
+              : actual < ceiling.pct - 20
+                ? `Your positions total about ${actual}% of modal, well under the ceiling. There is room to add if a setup earns it.`
+                : `Your positions total about ${actual}% of modal, which fits the ceiling.`;
+          } else {
+            expTx += 'Add your holdings in My portfolio to compare your actual exposure against this number.';
+          }
+          expTx += ' Concept adapted from the exposure-coach trading skill.';
+          items.push({ tag: 'CAPITAL', color: ceiling.pct >= 60 ? 'var(--up)' : ceiling.pct >= 35 ? 'var(--warn)' : 'var(--down)',
+            tt: `Suggested market exposure: about ${ceiling.pct}% of trading capital`, tx: expTx });
+        }
 
         const top = radarRows.find((r) => r.score >= 55);
         if (top && top.dir === 'short') {
@@ -1840,7 +1877,7 @@
             const sizeStr = isIDX(SYMBOL)
               ? `${Math.floor(units).toLocaleString('id-ID')} shares (about ${Math.floor(units / 100)} lot)`
               : `${units.toFixed(6)} ${shortSym(SYMBOL)}`;
-            sizeS = `With modal ${fmtIDR(MODAL)} and ${RISKPCT}% risk per trade, the size is ${sizeStr}, a position of about ${fmtIDR(posIDR)}. The technical view has the full calculator.`;
+            sizeS = `With modal ${fmtIDR(MODAL)} and ${RISKPCT}% risk per trade, the size is ${sizeStr}, a position of about ${fmtIDR(posIDR)}. The technical view has the full calculator. One more rule: keep the sum of open risk across every position under 6% of modal (portfolio heat).`;
           }
           const evR = proj.pT1First != null
             ? proj.pT1First * 1.5 - proj.pStop * 1
@@ -2075,7 +2112,8 @@
               ? `Size: <b>${Math.floor(units).toLocaleString('id-ID')} shares ≈ ${lots} lot</b><br>`
               : `Size: <b>${units.toFixed(6)} ${shortSym(SYMBOL)}</b><br>`) +
             `Position value ≈ <b>${fmtIDR(posIDR)}</b> (${(posIDR / modal * 100).toFixed(1)}% of modal)` +
-            (posIDR > modal ? ' <span style="color:var(--down)">(exceeds modal, cap it)</span>' : '');
+            (posIDR > modal ? ' <span style="color:var(--down)">(exceeds modal, cap it)</span>' : '') +
+            '<br><span style="color:var(--subtle);font-size:11px">Portfolio heat rule: keep the sum of open risk across every position under 6% of modal.</span>';
         }
         document.getElementById('q-modal').addEventListener('input', sizeOut);
         document.getElementById('q-risk').addEventListener('input', sizeOut);
@@ -2120,8 +2158,9 @@
 
           const usdidr = scan['FX_IDC:USDIDR'] ? scan['FX_IDC:USDIDR'].close : null;
           const radarRows = renderRadar(scan);
-          const pfValue = renderPortfolio(scan, usdidr);
-          renderBriefing(scan, radarRows, pfValue, usdidr);
+          const ceiling = exposureCeiling(macroRegime(scan), radarRows);
+          const pfValue = renderPortfolio(scan, usdidr, ceiling);
+          renderBriefing(scan, radarRows, pfValue, usdidr, ceiling);
           renderQuantPanel(scan, klines, usdidr);
           renderPaper(paperProcess(scan, radarRows));
           checkAlerts(scan);
