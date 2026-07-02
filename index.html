@@ -45,7 +45,7 @@
       .tape { border-bottom: 1px solid var(--border); background: var(--panel); }
 
       header.bar {
-        display: flex; align-items: center; gap: 16px;
+        display: flex; align-items: center; gap: 12px;
         padding: 14px 2px; flex-wrap: wrap;
       }
       .brand { display: flex; align-items: center; gap: 10px; }
@@ -61,10 +61,21 @@
       .brand .sym b { color: var(--up); }
       .spacer { flex: 1 1 auto; }
 
+      .nav {
+        display: inline-flex; border: 1px solid var(--border); border-radius: 10px;
+        overflow: hidden; background: var(--panel);
+      }
+      .nav a {
+        padding: 8px 14px; font-size: 13px; font-weight: 700; text-decoration: none;
+        color: var(--muted);
+      }
+      .nav a.active { background: var(--accent); color: #fff; }
+      .nav a:not(.active):hover { color: var(--text); }
+
       .search {
         display: flex; align-items: center; gap: 8px;
         background: var(--panel); border: 1px solid var(--border);
-        border-radius: 10px; padding: 7px 10px; min-width: 230px;
+        border-radius: 10px; padding: 7px 10px; min-width: 210px;
       }
       .search svg { flex: 0 0 auto; color: var(--subtle); }
       .search input {
@@ -104,6 +115,7 @@
       .panel {
         background: var(--panel); border: 1px solid var(--border);
         border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
+        margin-bottom: 12px;
       }
       .panel-head {
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -115,13 +127,89 @@
 
       .main { display: grid; grid-template-columns: 2.4fr 1fr; gap: 12px; margin-bottom: 12px; }
       .lower { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 12px; }
-      #info-strip { margin-bottom: 12px; }
+      .duo { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; margin-bottom: 12px; }
+      .duo .panel { margin-bottom: 0; }
 
       .tv-host { width: 100%; height: 100%; }
       .tradingview-widget-container, .tradingview-widget-container__widget { height: 100%; width: 100%; }
 
-      /* ------------------------- Quant Lab ------------------------- */
-      #quant { margin-bottom: 12px; }
+      /* ---------------- Briefing (takeaways) ---------------- */
+      #briefing .panel-body { padding: 8px 14px 14px; }
+      .brief-item {
+        display: flex; gap: 12px; align-items: flex-start;
+        padding: 10px 4px; border-bottom: 1px solid var(--border);
+      }
+      .brief-item:last-child { border-bottom: 0; }
+      .brief-item .ic { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }
+      .brief-item .tt { font-size: 13.5px; font-weight: 700; }
+      .brief-item .tx { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 2px; }
+
+      /* ---------------- Portfolio ---------------- */
+      .pf-summary { display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 14px 0; }
+      .pf-chip {
+        background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+        padding: 8px 13px; min-width: 150px;
+      }
+      .pf-chip .lab { font-size: 10.5px; color: var(--subtle); text-transform: uppercase; letter-spacing: .6px; }
+      .pf-chip .val { font-size: 16px; font-weight: 800; margin-top: 2px; }
+      .pf-tablewrap { padding: 10px 14px 0; overflow-x: auto; }
+      table.pf { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 640px; }
+      table.pf th {
+        text-align: right; color: var(--subtle); font-weight: 600; font-size: 10.5px;
+        text-transform: uppercase; letter-spacing: .5px; padding: 4px 8px 7px;
+        border-bottom: 1px solid var(--border);
+      }
+      table.pf th:first-child, table.pf td:first-child { text-align: left; padding-left: 0; }
+      table.pf td { padding: 7px 8px; border-bottom: 1px solid var(--border); text-align: right; }
+      table.pf tr:last-child td { border-bottom: 0; }
+      table.pf .symcell { font-weight: 700; cursor: pointer; }
+      table.pf .symcell:hover { color: var(--accent); }
+      table.pf .symcell .sub { font-size: 10.5px; color: var(--subtle); font-weight: 500; }
+      .xbtn {
+        border: 1px solid var(--border); background: transparent; color: var(--subtle);
+        border-radius: 7px; padding: 3px 9px; font-size: 11px; cursor: pointer; font-weight: 600;
+      }
+      .xbtn:hover { color: var(--down); border-color: var(--down); }
+      .pf-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; padding: 12px 14px; }
+      .pf-form label { display: block; font-size: 10.5px; color: var(--subtle); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+      .pf-form input {
+        background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+        border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none;
+      }
+      .pf-form input:focus { border-color: var(--accent); }
+      .addbtn {
+        background: var(--up); border: 0; color: #fff; font-weight: 700; font-size: 13px;
+        border-radius: 9px; padding: 9px 18px; cursor: pointer;
+      }
+      .addbtn:hover { filter: brightness(1.1); }
+      .pf-empty { padding: 22px 14px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+      .pf-note { padding: 0 14px 12px; font-size: 11px; color: var(--subtle); line-height: 1.5; }
+      details.closed-log { padding: 0 14px 12px; }
+      details.closed-log summary { cursor: pointer; font-size: 12px; color: var(--muted); font-weight: 600; }
+      details.closed-log .row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+
+      /* ---------------- Radar ---------------- */
+      table.radar { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      table.radar th {
+        text-align: left; color: var(--subtle); font-weight: 600; font-size: 10.5px;
+        text-transform: uppercase; letter-spacing: .5px; padding: 10px 8px 7px;
+        border-bottom: 1px solid var(--border);
+      }
+      table.radar td { padding: 8px; border-bottom: 1px solid var(--border); }
+      table.radar tr:last-child td { border-bottom: 0; }
+      table.radar tbody tr { cursor: pointer; }
+      table.radar tbody tr:hover { background: var(--panel-2); }
+      .r-score { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+      .r-bar { flex: 1; height: 7px; border-radius: 4px; background: var(--border); overflow: hidden; }
+      .r-bar > div { height: 100%; }
+      .badge {
+        display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 10.5px;
+        font-weight: 800; letter-spacing: .3px; color: #fff; white-space: nowrap;
+      }
+      .b-green { background: var(--up); } .b-amber { background: var(--warn); color: #1c1500; }
+      .b-gray { background: #5a6273; } .b-red { background: var(--down); }
+
+      /* ---------------- Quant Lab ---------------- */
       .q-body { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
       .q-toprow { display: grid; grid-template-columns: 1.2fr 1.6fr 1.1fr; gap: 12px; }
       .q-card {
@@ -143,19 +231,11 @@
       .scorebar { height: 9px; border-radius: 6px; background: var(--border); overflow: hidden; margin: 10px 0 4px; }
       .scorebar > div { height: 100%; border-radius: 6px; transition: width .5s; }
       .q-reason { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 8px; }
-      .q-invest { margin-top: 10px; font-size: 12.5px; line-height: 1.5; }
-      .q-invest b { font-weight: 700; }
-
-      table.q-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-      table.q-table th {
-        text-align: left; color: var(--subtle); font-weight: 600; font-size: 11px;
-        text-transform: uppercase; letter-spacing: .5px; padding: 4px 8px 6px 0;
+      .q-simple {
+        margin-top: 10px; font-size: 13px; line-height: 1.55; background: var(--panel);
+        border: 1px dashed var(--border); border-radius: 9px; padding: 9px 11px;
       }
-      table.q-table td { padding: 5px 8px 5px 0; border-top: 1px solid var(--border); }
-      table.q-table td:last-child, table.q-table th:last-child { text-align: right; }
-      .pos { color: var(--up); font-weight: 700; }
-      .neg { color: var(--down); font-weight: 700; }
-      .neu { color: var(--muted); font-weight: 600; }
+      .q-invest { margin-top: 10px; font-size: 12.5px; line-height: 1.5; }
 
       .plan-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px; font-size: 13px; }
       .plan-grid .lab { color: var(--subtle); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
@@ -205,6 +285,22 @@
       .refresh:hover { color: var(--text); border-color: var(--accent); }
       .q-loading { padding: 30px; text-align: center; color: var(--subtle); font-size: 13px; }
 
+      .pos { color: var(--up); font-weight: 700; }
+      .neg { color: var(--down); font-weight: 700; }
+      .neu { color: var(--muted); font-weight: 600; }
+
+      /* ---------------- Guide & glossary ---------------- */
+      details.guide {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+        padding: 14px 16px; margin-bottom: 12px;
+      }
+      details.guide summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
+      details.guide .g-body { margin-top: 12px; font-size: 13px; line-height: 1.7; color: var(--muted); }
+      details.guide h4 { color: var(--text); font-size: 12.5px; margin: 14px 0 4px; }
+      .gloss { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 8px; }
+      .gloss div { background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px; padding: 8px 11px; font-size: 12px; }
+      .gloss b { color: var(--text); }
+
       footer {
         margin-top: 18px; text-align: center; color: var(--subtle); font-size: 12px; line-height: 1.6;
       }
@@ -212,6 +308,7 @@
       @media (max-width: 1080px) {
         .main { grid-template-columns: 1fr; }
         .lower { grid-template-columns: 1fr; }
+        .duo { grid-template-columns: 1fr; }
         .q-toprow { grid-template-columns: 1fr; }
       }
     </style>
@@ -230,6 +327,10 @@
             <div class="sym">Now charting: <b id="cur-sym">BINANCE:BTCUSDT</b></div>
           </div>
         </div>
+        <nav class="nav" id="site-nav">
+          <a href="#" id="nav-money">💰 Money</a>
+          <a href="#" class="active">📈 Trading</a>
+        </nav>
         <div class="spacer"></div>
         <form class="search" id="search-form" title="Type EXCHANGE:TICKER, e.g. IDX:BBCA or BINANCE:ETHUSDT">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -243,51 +344,118 @@
         <button class="iconbtn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme"></button>
       </header>
 
+      <!-- Today's briefing -->
+      <section class="panel" id="briefing">
+        <div class="panel-head">
+          <h2>☀️ Today’s briefing — plain &amp; simple</h2>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="q-updated" id="q-updated">loading…</span>
+            <button class="refresh" id="q-refresh">↻ Refresh</button>
+          </span>
+        </div>
+        <div class="panel-body" id="brief-body">
+          <div class="q-loading">Reading the markets for you…</div>
+        </div>
+      </section>
+
+      <!-- Portfolio + Radar -->
+      <div class="duo">
+        <section class="panel" id="portfolio">
+          <div class="panel-head">
+            <h2>💼 My portfolio — live PnL</h2>
+            <span class="sub">Saved on this device · marks to market live</span>
+          </div>
+          <div id="pf-body"><div class="q-loading">Loading…</div></div>
+        </section>
+        <section class="panel" id="radar">
+          <div class="panel-head">
+            <h2>🎯 Opportunity radar</h2>
+            <span class="sub">Every symbol scored 0–100 · click a row to open it</span>
+          </div>
+          <div class="panel-body" style="overflow-x:auto" id="radar-body">
+            <div class="q-loading">Scanning…</div>
+          </div>
+        </section>
+      </div>
+
       <!-- Quick picks -->
       <div class="chips" id="chips"></div>
 
       <!-- Symbol info strip -->
-      <div id="info-strip" class="panel">
+      <div class="panel" style="margin-bottom:12px">
         <div class="tv-host" id="info" style="height:170px"></div>
       </div>
 
       <!-- Main: chart + technicals -->
       <div class="main">
-        <section class="panel">
-          <div class="panel-head"><h2>Chart</h2><span class="sub">Real-time · indicators · drawing tools</span></div>
+        <section class="panel" style="margin-bottom:0">
+          <div class="panel-head"><h2>Chart</h2><span class="sub">Daily candles · EMA &amp; RSI preloaded · use ranges below</span></div>
           <div class="panel-body"><div class="tv-host" id="chart" style="height:560px"></div></div>
         </section>
-        <section class="panel">
-          <div class="panel-head"><h2>Technicals</h2><span class="sub">Buy / sell signal</span></div>
+        <section class="panel" style="margin-bottom:0">
+          <div class="panel-head"><h2>Technicals</h2><span class="sub">Community buy/sell gauge</span></div>
           <div class="panel-body"><div class="tv-host" id="ta" style="height:560px"></div></div>
         </section>
       </div>
 
-      <!-- ==================== SUBIAKTO QUANT LAB ==================== -->
+      <!-- Quant Lab -->
       <section class="panel" id="quant">
         <div class="panel-head">
-          <h2>Quant Lab · SUBIAKTO deep analysis</h2>
-          <span style="display:flex;align-items:center;gap:10px">
-            <span class="q-updated" id="q-updated">loading…</span>
-            <button class="refresh" id="q-refresh">↻ Refresh</button>
-          </span>
+          <h2>🔬 Quant Lab · deep analysis</h2>
+          <span class="sub" id="quant-sub">for the selected symbol</span>
         </div>
         <div class="q-body" id="q-body">
           <div class="q-loading">Fetching live market data…</div>
         </div>
       </section>
 
+      <!-- Beginner guide -->
+      <details class="guide">
+        <summary>📖 New to trading? Read this first (2 minutes)</summary>
+        <div class="g-body">
+          <h4>The only 3 rules that matter</h4>
+          <b style="color:var(--text)">1. Never risk more than 1% of your money on one trade.</b> Use the position-size calculator in the Quant Lab — it does the math for you.<br />
+          <b style="color:var(--text)">2. Decide your exit before you enter.</b> Every trade plan here comes with a stop loss. If price hits it, you sell. No "maybe it comes back."<br />
+          <b style="color:var(--text)">3. Never add money to a losing trade.</b> Averaging down feels smart and is the #1 account killer.
+
+          <h4>Swing vs. Invest — which are you doing?</h4>
+          <b style="color:var(--text)">Swing</b> = renting a stock for 2–6 weeks to catch a move. You live by the stop loss.
+          <b style="color:var(--text)">Invest</b> = marrying it for years because you believe in the business. You buy slowly (DCA) and ignore the noise.
+          Decide before you buy — most losses come from swings that turn into accidental "investments."
+
+          <h4>How to read the colors</h4>
+          🟢 <b style="color:var(--text)">Buy zone</b> — a real setup exists, with entry/stop/targets. ·
+          🟡 <b style="color:var(--text)">Wait</b> — promising but not confirmed. ·
+          ⚪ <b style="color:var(--text)">Range</b> — sideways, skip it. ·
+          🔴 <b style="color:var(--text)">Avoid</b> — still falling; cheap can get cheaper.
+
+          <h4>Quick glossary</h4>
+          <div class="gloss">
+            <div><b>PnL</b> — profit and loss. "Unrealized" = on paper; "realized" = you actually sold.</div>
+            <div><b>Stop loss</b> — the price where you admit you're wrong and sell. Set it BEFORE buying.</div>
+            <div><b>RSI</b> — momentum meter 0–100. Above 70 = maybe too hot; below 30 = beaten up.</div>
+            <div><b>EMA</b> — moving average, the trend line. Price above rising EMAs = healthy.</div>
+            <div><b>ATR</b> — how much it typically moves per day. Sets how wide your stop must be.</div>
+            <div><b>ADX</b> — trend strength. Above 25 = real trend; below 20 = choppy mess.</div>
+            <div><b>R</b> — your risk unit (entry − stop). Target 1 = you make 1.5× what you risked.</div>
+            <div><b>Drawdown</b> — worst drop from a peak. Crypto regularly does −50%. Size accordingly.</div>
+            <div><b>Lot</b> — IDX stocks trade in lots of 100 shares.</div>
+            <div><b>DCA</b> — buying a fixed amount monthly regardless of price. The investor's tool.</div>
+          </div>
+        </div>
+      </details>
+
       <!-- Lower: watchlist + news + calendar -->
       <div class="lower">
-        <section class="panel">
+        <section class="panel" style="margin-bottom:0">
           <div class="panel-head"><h2>Watchlist</h2><span class="sub">Indonesia · Crypto · US · Forex</span></div>
           <div class="panel-body"><div class="tv-host" id="market" style="height:460px"></div></div>
         </section>
-        <section class="panel">
+        <section class="panel" style="margin-bottom:0">
           <div class="panel-head"><h2>News</h2><span class="sub" id="news-sub">Headlines</span></div>
           <div class="panel-body"><div class="tv-host" id="news" style="height:460px"></div></div>
         </section>
-        <section class="panel">
+        <section class="panel" style="margin-bottom:0">
           <div class="panel-head"><h2>Economic calendar</h2><span class="sub">US · EU · ID · JP · GB · CN</span></div>
           <div class="panel-body"><div class="tv-host" id="calendar" style="height:460px"></div></div>
         </section>
@@ -296,27 +464,39 @@
       <footer>
         Charts &amp; data by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>;
         crypto candles by Binance public data. IDX quotes may be delayed on free feeds.
-        This dashboard is for market analysis and monitoring — order execution happens through your broker / exchange.<br />
-        Quant Lab output is automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto. 🙏
+        Portfolio data lives only in your browser (localStorage) — nothing is uploaded anywhere.<br />
+        This dashboard analyzes and monitors; order execution happens at your broker / exchange.
+        Automated technical analysis, <b>not financial advice</b>. Markets are risky; trade responsibly, Pak Subiakto. 🙏
       </footer>
     </div>
 
     <script>
       /* ------------------------------------------------------------------ *
-       * State                                                              *
+       * State & config                                                     *
        * ------------------------------------------------------------------ */
       const STORE_KEY = 'td:state';
+      const PF_KEY = 'subiakto:portfolio';
       const saved = (() => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; } })();
       let SYMBOL = saved.symbol || 'BINANCE:BTCUSDT';
       let THEME = saved.theme || 'dark';
-      let MODAL = saved.modal || 10_000_000; // IDR capital for position sizing
+      let MODAL = saved.modal || 10_000_000;
       let RISKPCT = saved.riskPct || 1;
 
       function persist() {
         try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT })); } catch {}
       }
 
-      /* Quick-pick groups: label -> [ [display, symbol], ... ] */
+      /* Portfolio storage: { positions:[{id,sym,qty,entry,addedAt}], closed:[{sym,qty,entry,exit,realizedIDR,closedAt}] } */
+      function loadPf() {
+        try { return JSON.parse(localStorage.getItem(PF_KEY)) || { positions: [], closed: [] }; }
+        catch { return { positions: [], closed: [] }; }
+      }
+      function savePf(pf) { try { localStorage.setItem(PF_KEY, JSON.stringify(pf)); } catch {} }
+
+      /* Sister-site nav (same origin on GitHub Pages → shared portfolio storage) */
+      const onPages = location.hostname.endsWith('github.io');
+      document.getElementById('nav-money').href = onPages ? '/finance-dashboard/' : 'http://localhost:5173/';
+
       const GROUPS = {
         Indonesia: [
           ['IDX', 'IDX:COMPOSITE'], ['BBCA', 'IDX:BBCA'], ['BBRI', 'IDX:BBRI'], ['BMRI', 'IDX:BMRI'],
@@ -327,6 +507,12 @@
         Stocks: [['AAPL', 'NASDAQ:AAPL'], ['TSLA', 'NASDAQ:TSLA'], ['NVDA', 'NASDAQ:NVDA'], ['MSFT', 'NASDAQ:MSFT']],
         Forex: [['USD/IDR', 'FX_IDC:USDIDR'], ['EUR/USD', 'FX:EURUSD'], ['USD/JPY', 'OANDA:USDJPY']],
       };
+      /* Radar scores tradeable stocks + crypto (no index, no forex — confusing for picks). */
+      const RADAR_BASKET = [
+        ...GROUPS.Indonesia.filter(([, s]) => s !== 'IDX:COMPOSITE'),
+        ...GROUPS.Crypto,
+        ...GROUPS.Stocks,
+      ];
 
       const TICKER_SYMBOLS = [
         { proName: 'IDX:COMPOSITE', title: 'IDX' },
@@ -397,7 +583,7 @@
       }
       function renderChart() {
         tvWidget('chart', 'embed-widget-advanced-chart.js', {
-          autosize: true, symbol: SYMBOL, interval: '60', timezone: 'Asia/Jakarta',
+          autosize: true, symbol: SYMBOL, interval: 'D', timezone: 'Asia/Jakarta',
           theme: THEME, style: '1', locale: 'en', hide_side_toolbar: false,
           allow_symbol_change: true, save_image: true, withdateranges: true,
           details: true, studies: ['STD;EMA', 'STD;RSI'], support_host: 'https://www.tradingview.com',
@@ -405,7 +591,7 @@
       }
       function renderTA() {
         tvWidget('ta', 'embed-widget-technical-analysis.js', {
-          interval: '1h', width: '100%', height: '100%', isTransparent: true,
+          interval: '1D', width: '100%', height: '100%', isTransparent: true,
           symbol: SYMBOL, showIntervalTabs: true, displayMode: 'single',
           locale: 'en', colorTheme: THEME,
         });
@@ -435,26 +621,26 @@
           locale: 'en', importanceFilter: '0,1', countryFilter: 'us,eu,id,jp,gb,cn',
         });
       }
-
       function renderSymbolWidgets() {
         renderInfo(); renderChart(); renderTA(); renderNews();
         document.getElementById('cur-sym').textContent = SYMBOL;
+        document.getElementById('quant-sub').textContent = SYMBOL;
         document.getElementById('tv-open').href =
           'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(SYMBOL);
       }
-      function renderAll() {
+      function renderAllWidgets() {
         renderTicker(); renderMarket(); renderCalendar(); renderSymbolWidgets();
         syncChips();
       }
 
       /* ------------------------------------------------------------------ *
-       * QUANT LAB — live data + econometrics                                *
+       * Live data engine                                                    *
        * ------------------------------------------------------------------ */
       const SCAN_COLS = [
         'close','change','Perf.W','Perf.1M','Perf.3M','Perf.6M','Perf.YTD','Perf.Y',
-        'Volatility.W','Volatility.M','RSI','MACD.macd','MACD.signal',
+        'Volatility.M','RSI','MACD.macd','MACD.signal',
         'EMA20','EMA50','EMA200','ADX','ATR','Recommend.All',
-        'price_52_week_high','price_52_week_low','BB.upper','BB.lower','Stoch.K','volume',
+        'price_52_week_high','price_52_week_low','BB.upper','BB.lower','volume',
       ];
       const MACRO_TICKERS = [
         ['FX_IDC:USDIDR','USD/IDR'], ['TVC:DXY','Dollar Index'], ['TVC:GOLD','Gold'],
@@ -478,7 +664,6 @@
         return map;
       }
 
-      /** Daily klines for BINANCE:*  → [{t, o, h, l, c, v}] oldest→newest */
       async function binanceKlines(sym, limit = 400) {
         const pair = sym.split(':')[1];
         const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=1d&limit=${limit}`);
@@ -487,7 +672,6 @@
         return rows.map((k) => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
       }
 
-      /* ---------- econometrics on a daily close series ---------- */
       function seriesMetrics(closes) {
         const n = closes.length;
         const rets = [];
@@ -495,16 +679,13 @@
         const mean = rets.reduce((s, x) => s + x, 0) / rets.length;
         const sd = Math.sqrt(rets.reduce((s, x) => s + (x - mean) ** 2, 0) / (rets.length - 1));
         const annVol = sd * Math.sqrt(365) * 100;
-        const annDrift = mean * 365 * 100;
-        const rf = 0.04; // 4% USD risk-free assumption
+        const rf = 0.04;
         const sharpe = (mean * 365 - rf) / (sd * Math.sqrt(365));
         const downside = rets.filter((x) => x < 0);
         const dsd = Math.sqrt(downside.reduce((s, x) => s + x * x, 0) / Math.max(1, downside.length));
         const sortino = (mean * 365 - rf) / (dsd * Math.sqrt(365));
-        // max drawdown
         let peak = closes[0], maxDD = 0;
         for (const c of closes) { if (c > peak) peak = c; maxDD = Math.min(maxDD, c / peak - 1); }
-        // linear regression on log price (trend + R²)
         const logs = closes.map((c) => Math.log(c));
         const xs = logs.map((_, i) => i);
         const xm = (n - 1) / 2, ym = logs.reduce((s, y) => s + y, 0) / n;
@@ -513,18 +694,16 @@
         const slope = sxy / sxx;
         const r2 = syy > 0 ? (sxy * sxy) / (sxx * syy) : 0;
         const regDriftAnn = slope * 365 * 100;
-        // lag-1 autocorrelation of returns (momentum vs mean reversion)
         let acNum = 0, acDen = 0;
         for (let i = 1; i < rets.length; i++) acNum += (rets[i] - mean) * (rets[i - 1] - mean);
         for (const x of rets) acDen += (x - mean) ** 2;
         const acf1 = acDen > 0 ? acNum / acDen : 0;
-        // historical 1-week 95% VaR from overlapping 7-day returns
         const wk = [];
         for (let i = 7; i < n; i++) wk.push(closes[i] / closes[i - 7] - 1);
         wk.sort((a, b) => a - b);
         const var95 = wk.length ? wk[Math.floor(wk.length * 0.05)] * 100 : null;
         const winWeeks = wk.length ? (wk.filter((x) => x > 0).length / wk.length) * 100 : null;
-        return { annVol, annDrift, sharpe, sortino, maxDD: maxDD * 100, regDriftAnn, r2, acf1, var95, winWeeks };
+        return { annVol, sharpe, sortino, maxDD: maxDD * 100, regDriftAnn, r2, acf1, var95, winWeeks };
       }
 
       function horizonReturns(closes) {
@@ -536,7 +715,6 @@
         ];
       }
 
-      /* ---------- scoring model (transparent weights) ---------- */
       function scoreSnapshot(s) {
         let trend = 0;
         const c = s.close;
@@ -544,43 +722,47 @@
         if (s.EMA20 > s.EMA50) trend += 7;
         if (s.EMA50 > s.EMA200) trend += 7;
         if (c > s.EMA200) trend += 7;
-        if (s['MACD.macd'] > s['MACD.signal']) trend += 7; // /35
-
+        if (s['MACD.macd'] > s['MACD.signal']) trend += 7;
         let mom = 0;
         const rsi = s.RSI;
         if (rsi >= 45 && rsi <= 65) mom += 15;
         else if (rsi > 65 && rsi <= 75) mom += 10;
         else if (rsi >= 30 && rsi < 45) mom += 8;
         else if (rsi > 75) mom += 3;
-        else mom += 5; // <30 oversold
+        else mom += 5;
         if (s['Perf.W'] > 0) mom += 5;
-        if (s['Perf.1M'] > 0) mom += 5; // /25
-
+        if (s['Perf.1M'] > 0) mom += 5;
         let qual = 0;
         const upTrend = c > s.EMA50;
         if (s.ADX >= 25) qual = upTrend ? 20 : 5;
         else if (s.ADX >= 20) qual = upTrend ? 12 : 6;
-        else qual = 6; // choppy /20
-
+        else qual = 6;
         let posScore = 0;
         const hi = s.price_52_week_high, lo = s.price_52_week_low;
         const pos = hi > lo ? (c - lo) / (hi - lo) : 0.5;
         if (c > s.EMA200) posScore = pos < 0.4 ? 20 : pos <= 0.7 ? 14 : 10;
-        else posScore = pos < 0.2 ? 8 : 4; // /20
-
+        else posScore = pos < 0.2 ? 8 : 4;
         const total = Math.round(trend + mom + qual + posScore);
         return { total, trend, mom, qual, posScore, pos, rsi, upTrend };
       }
 
       function verdictOf(sc, s) {
         const above200 = s.close > s.EMA200;
-        if (sc.total >= 70 && s.ADX >= 20) return { label: 'SWING — BUY ZONE', cls: 'v-green', kind: 'buy' };
-        if (sc.total >= 55) return { label: 'SWING — WAIT FOR TRIGGER', cls: 'v-amber', kind: 'wait' };
-        if (sc.total >= 40) return { label: 'NEUTRAL — RANGE ONLY', cls: 'v-gray', kind: 'range' };
+        if (sc.total >= 70 && s.ADX >= 20) return { label: 'SWING — BUY ZONE', short: 'BUY ZONE', cls: 'v-green', b: 'b-green', kind: 'buy' };
+        if (sc.total >= 55) return { label: 'SWING — WAIT FOR TRIGGER', short: 'WAIT', cls: 'v-amber', b: 'b-amber', kind: 'wait' };
+        if (sc.total >= 40) return { label: 'NEUTRAL — RANGE ONLY', short: 'RANGE', cls: 'v-gray', b: 'b-gray', kind: 'range' };
         return above200
-          ? { label: 'WEAK — REDUCE / WATCH', cls: 'v-gray', kind: 'weak' }
-          : { label: 'AVOID LONGS — DOWNTREND', cls: 'v-red', kind: 'avoid' };
+          ? { label: 'WEAK — REDUCE / WATCH', short: 'WEAK', cls: 'v-gray', b: 'b-gray', kind: 'weak' }
+          : { label: 'AVOID LONGS — DOWNTREND', short: 'AVOID', cls: 'v-red', b: 'b-red', kind: 'avoid' };
       }
+
+      const SIMPLE_TERMS = {
+        buy: '🟢 <b>Simple terms:</b> the wind is at your back — this is rising with real strength. You may buy, but only with the stop loss set below. No stop, no trade.',
+        wait: '🟡 <b>Simple terms:</b> promising, but not proven yet. Let it show strength first (the trigger below) — missing the first 2% is cheaper than catching a fake move.',
+        range: '⚪ <b>Simple terms:</b> price is going sideways, like a car stuck in traffic. Skip it — there are better uses of your money and attention.',
+        weak: '⚪ <b>Simple terms:</b> the long-term trend is still OK but it’s losing steam. If you own it, tighten your exit. If you don’t own it — no rush at all.',
+        avoid: '🔴 <b>Simple terms:</b> this is still falling. Buying now is catching a falling knife — it looks cheap, then gets cheaper. Wait until it stops falling first.',
+      };
 
       function tradePlan(s, verdict) {
         const atr = s.ATR, c = s.close;
@@ -589,16 +771,9 @@
         const entry = (entryLow + entryHigh) / 2;
         const stop = entry - 1.5 * atr;
         const risk = entry - stop;
-        return {
-          entryLow, entryHigh, entry, stop,
-          t1: entry + 1.5 * risk,
-          t2: entry + 2.5 * risk,
-          riskPerUnit: risk,
-          rr1: 1.5, rr2: 2.5,
-        };
+        return { entryLow, entryHigh, entry, stop, t1: entry + 1.5 * risk, t2: entry + 2.5 * risk, riskPerUnit: risk };
       }
 
-      /* ---------- formatting ---------- */
       const fmtPct = (v, d = 1) =>
         v == null || isNaN(v) ? '—' : (v > 0 ? '+' : '') + v.toFixed(d) + '%';
       const clsPct = (v) => (v == null || isNaN(v) ? 'neu' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu');
@@ -609,209 +784,427 @@
         if (v >= 10) return v.toLocaleString('en-US', { maximumFractionDigits: 2 });
         return v.toLocaleString('en-US', { maximumFractionDigits: 4 });
       }
-      const fmtIDR = (v) => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+      const fmtIDR = (v) => (v < 0 ? '-Rp ' : 'Rp ') + Math.round(Math.abs(v)).toLocaleString('id-ID');
+      const fmtIDRsigned = (v) => (v >= 0 ? '+Rp ' : '-Rp ') + Math.round(Math.abs(v)).toLocaleString('id-ID');
+      const shortSym = (s) => s.split(':').pop().replace(/USDT$|USDC$/, '');
 
-      /* ---------- macro regime ---------- */
       function macroRegime(m) {
-        // Simple transparent rule set
         let riskOn = 0, votes = 0;
         const dxy = m['TVC:DXY'], spx = m['SP:SPX'], idr = m['FX_IDC:USDIDR'], gold = m['TVC:GOLD'];
-        if (dxy) { votes++; if (dxy['Perf.1M'] < 0) riskOn++; }        // weak USD → risk-on
-        if (spx) { votes++; if (spx['Perf.1M'] > 0) riskOn++; }        // equities up
-        if (idr) { votes++; if (idr['Perf.1M'] < 0) riskOn++; }        // IDR strengthening
-        if (gold) { votes++; if (gold['Perf.1M'] < 0) riskOn++; }      // gold bid = fear
+        if (dxy) { votes++; if (dxy['Perf.1M'] < 0) riskOn++; }
+        if (spx) { votes++; if (spx['Perf.1M'] > 0) riskOn++; }
+        if (idr) { votes++; if (idr['Perf.1M'] < 0) riskOn++; }
+        if (gold) { votes++; if (gold['Perf.1M'] < 0) riskOn++; }
         const ratio = votes ? riskOn / votes : 0.5;
         if (ratio >= 0.75) return { label: 'RISK-ON', color: 'var(--up)', note: 'Tailwind for stocks & crypto' };
         if (ratio <= 0.25) return { label: 'RISK-OFF', color: 'var(--down)', note: 'Defensive — smaller positions' };
         return { label: 'MIXED', color: 'var(--warn)', note: 'Selective — follow the trend, size down' };
       }
 
-      /* ---------- main quant renderer ---------- */
-      let quantSeq = 0;
-      async function renderQuant() {
-        const seq = ++quantSeq;
+      /* ------------------------------------------------------------------ *
+       * Renderers: briefing, radar, portfolio, quant                        *
+       * ------------------------------------------------------------------ */
+      function isIDX(sym) { return sym.startsWith('IDX:'); }
+
+      function valuePortfolio(pf, scan, usdidr) {
+        const rows = [];
+        let totalIDR = 0, costIDR = 0, dayIDR = 0, missing = [];
+        for (const p of pf.positions) {
+          const q = scan[p.sym];
+          if (!q || q.close == null) { missing.push(p.sym); continue; }
+          const fx = isIDX(p.sym) ? 1 : (usdidr || 0);
+          if (!fx) { missing.push(p.sym); continue; }
+          const valueIDR = p.qty * q.close * fx;
+          const cIDR = p.qty * p.entry * fx;
+          const pnlIDR = valueIDR - cIDR;
+          const dayChg = q.change != null ? valueIDR - valueIDR / (1 + q.change / 100) : 0;
+          rows.push({ ...p, price: q.close, chg: q.change, valueIDR, costIDR: cIDR, pnlIDR, pnlPct: cIDR ? (pnlIDR / cIDR) * 100 : 0, dayIDR: dayChg });
+          totalIDR += valueIDR; costIDR += cIDR; dayIDR += dayChg;
+        }
+        rows.sort((a, b) => b.valueIDR - a.valueIDR);
+        return { rows, totalIDR, costIDR, pnlIDR: totalIDR - costIDR, pnlPct: costIDR ? ((totalIDR - costIDR) / costIDR) * 100 : 0, dayIDR, missing };
+      }
+
+      function renderPortfolio(scan, usdidr) {
+        const pf = loadPf();
+        const host = document.getElementById('pf-body');
+        const v = valuePortfolio(pf, scan, usdidr);
+
+        const summary = pf.positions.length ? `
+          <div class="pf-summary num">
+            <div class="pf-chip"><div class="lab">Total value</div><div class="val">${fmtIDR(v.totalIDR)}</div></div>
+            <div class="pf-chip"><div class="lab">Unrealized PnL</div>
+              <div class="val ${clsPct(v.pnlIDR)}">${fmtIDRsigned(v.pnlIDR)} <span style="font-size:12px">(${fmtPct(v.pnlPct)})</span></div></div>
+            <div class="pf-chip"><div class="lab">Today</div><div class="val ${clsPct(v.dayIDR)}">${fmtIDRsigned(v.dayIDR)}</div></div>
+          </div>` : '';
+
+        const table = pf.positions.length ? `
+          <div class="pf-tablewrap"><table class="pf num">
+            <thead><tr><th>Asset</th><th>Qty</th><th>Entry</th><th>Now</th><th>Value (IDR)</th><th>PnL (IDR)</th><th>PnL %</th><th></th></tr></thead>
+            <tbody>
+              ${v.rows.map((r) => `
+                <tr>
+                  <td class="symcell" data-open="${r.sym}">${shortSym(r.sym)}<div class="sub">${r.sym}${isIDX(r.sym) ? ' · ' + Math.floor(r.qty / 100) + ' lot' : ''}</div></td>
+                  <td>${r.qty.toLocaleString('en-US', { maximumFractionDigits: 8 })}</td>
+                  <td>${fmtPrice(r.entry)}</td>
+                  <td>${fmtPrice(r.price)} <span class="${clsPct(r.chg)}" style="font-size:10.5px">${fmtPct(r.chg)}</span></td>
+                  <td>${fmtIDR(r.valueIDR)}</td>
+                  <td class="${clsPct(r.pnlIDR)}">${fmtIDRsigned(r.pnlIDR)}</td>
+                  <td class="${clsPct(r.pnlPct)}">${fmtPct(r.pnlPct)}</td>
+                  <td><button class="xbtn" data-close="${r.id}" title="Sell / close at current price">Close</button></td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>
+          ${v.missing.length ? `<div class="pf-note">⚠ No live quote for: ${v.missing.join(', ')} — excluded from totals.</div>` : ''}`
+        : `<div class="pf-empty">No positions yet. Add what you own below — e.g. <b>IDX:BBCA</b>, qty <b>500</b> (5 lot), entry <b>5600</b> —
+             and this page will track your live profit &amp; loss in Rupiah, updating every 90 seconds.<br><br>
+             💡 Crypto works too: <b>BINANCE:BTCUSDT</b>, qty <b>0.015</b>, entry in USD.</div>`;
+
+        const closedTotal = (pf.closed || []).reduce((s, c) => s + (c.realizedIDR || 0), 0);
+        const closedLog = (pf.closed || []).length ? `
+          <details class="closed-log">
+            <summary>Closed trades — realized PnL: <span class="num ${clsPct(closedTotal)}">${fmtIDRsigned(closedTotal)}</span></summary>
+            ${pf.closed.slice().reverse().map((c) => `
+              <div class="row num"><span>${shortSym(c.sym)} · ${c.qty} @ ${fmtPrice(c.entry)} → ${fmtPrice(c.exit)}</span>
+              <span class="${clsPct(c.realizedIDR)}">${fmtIDRsigned(c.realizedIDR)}</span></div>`).join('')}
+          </details>` : '';
+
+        host.innerHTML = `
+          ${summary}
+          ${table}
+          ${closedLog}
+          <form class="pf-form" id="pf-form">
+            <div><label>Symbol</label><input id="pf-sym" list="sym-list" placeholder="IDX:BBCA" style="width:150px;text-transform:uppercase" required></div>
+            <div><label>Qty (shares / coins)</label><input id="pf-qty" type="number" step="any" min="0" placeholder="500" style="width:120px" required></div>
+            <div><label>Entry price (IDR for IDX, USD else)</label><input id="pf-entry" type="number" step="any" min="0" placeholder="5600" style="width:150px" required></div>
+            <button class="addbtn" type="submit">+ Add position</button>
+          </form>
+          <div class="pf-note">Tip: 1 lot IDX = 100 shares. Your data stays in this browser only.</div>`;
+
+        document.getElementById('pf-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const sym = document.getElementById('pf-sym').value.trim().toUpperCase();
+          const qty = +document.getElementById('pf-qty').value;
+          const entry = +document.getElementById('pf-entry').value;
+          if (!sym.includes(':') || !(qty > 0) || !(entry > 0)) { alert('Use EXCHANGE:TICKER format, e.g. IDX:BBCA or BINANCE:BTCUSDT'); return; }
+          const cur = loadPf();
+          cur.positions.push({ id: 'p' + Date.now(), sym, qty, entry, addedAt: new Date().toISOString().slice(0, 10) });
+          savePf(cur);
+          refreshLive();
+        });
+        host.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => {
+          const cur = loadPf();
+          const i = cur.positions.findIndex((p) => p.id === b.dataset.close);
+          if (i === -1) return;
+          const p = cur.positions[i];
+          const q = scan[p.sym];
+          const fx = isIDX(p.sym) ? 1 : (usdidr || 0);
+          const exit = q ? q.close : p.entry;
+          if (!confirm(`Close ${shortSym(p.sym)} at ${fmtPrice(exit)}? Realized PnL will be logged.`)) return;
+          cur.closed = cur.closed || [];
+          cur.closed.push({ sym: p.sym, qty: p.qty, entry: p.entry, exit, realizedIDR: (exit - p.entry) * p.qty * fx, closedAt: new Date().toISOString().slice(0, 10) });
+          cur.positions.splice(i, 1);
+          savePf(cur);
+          refreshLive();
+        }));
+        host.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => setSymbol(el.dataset.open)));
+        return v;
+      }
+
+      function renderRadar(scan) {
+        const rows = RADAR_BASKET
+          .map(([disp, sym]) => {
+            const s = scan[sym];
+            if (!s || s.close == null) return null;
+            const sc = scoreSnapshot(s);
+            const vd = verdictOf(sc, s);
+            return { disp, sym, score: sc.total, vd, perfW: s['Perf.W'], perf1M: s['Perf.1M'] };
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.score - a.score);
+
+        const color = (sc) => sc >= 70 ? 'var(--up)' : sc >= 55 ? 'var(--warn)' : sc >= 40 ? '#5a6273' : 'var(--down)';
+        document.getElementById('radar-body').innerHTML = `
+          <table class="radar num">
+            <thead><tr><th>#</th><th>Asset</th><th>Score</th><th>Signal</th><th style="text-align:right">1W</th><th style="text-align:right">1M</th></tr></thead>
+            <tbody>
+              ${rows.map((r, i) => `
+                <tr data-open="${r.sym}" title="Open ${r.sym}">
+                  <td style="color:var(--subtle)">${i + 1}</td>
+                  <td style="font-weight:700">${r.disp}</td>
+                  <td><div class="r-score"><div class="r-bar"><div style="width:${r.score}%;background:${color(r.score)}"></div></div><span style="min-width:24px;text-align:right">${r.score}</span></div></td>
+                  <td><span class="badge ${r.vd.b}">${r.vd.short}</span></td>
+                  <td style="text-align:right" class="${clsPct(r.perfW)}">${fmtPct(r.perfW)}</td>
+                  <td style="text-align:right" class="${clsPct(r.perf1M)}">${fmtPct(r.perf1M)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+        document.querySelectorAll('#radar-body [data-open]').forEach((el) =>
+          el.addEventListener('click', () => setSymbol(el.dataset.open)));
+        return rows;
+      }
+
+      const DAILY_TIPS = [
+        'If you can’t explain why you’re buying in one sentence, don’t buy.',
+        'The stop loss is not a suggestion. Set it when you enter, honor it when it hits.',
+        'Position size matters more than entry price. Small enough to sleep well.',
+        'Nobody catches the exact bottom. Aim for the middle 60% of a move.',
+        'Red days in a downtrend are normal. Green days in a downtrend are traps more often than turns.',
+        'Your edge is patience. The market pays those who wait for their setup.',
+        'Check USD/IDR before buying Indonesian banks — foreign flows drive them.',
+        'Take profits at targets. Unrealized gains are the market’s money, not yours yet.',
+      ];
+
+      function renderBriefing(scan, radarRows, pfValue, usdidr) {
+        const items = [];
+        const regime = macroRegime(scan);
+        const idr = scan['FX_IDC:USDIDR'];
+        const idx = scan['IDX:COMPOSITE'];
+
+        let macroTxt;
+        if (regime.label === 'RISK-OFF') {
+          macroTxt = 'Big money is playing defense right now (strong dollar, weak markets). Trade smaller than usual and be extra picky.';
+        } else if (regime.label === 'RISK-ON') {
+          macroTxt = 'Money is flowing into risky assets. Good conditions — but still use stops; conditions change fast.';
+        } else {
+          macroTxt = 'Signals are mixed — some markets up, some down. Stick to the strongest names only and keep positions small.';
+        }
+        if (idr && idr['Perf.1M'] > 0.5) macroTxt += ` Rupiah is weakening (USD/IDR ${fmtPrice(idr.close)}, ${fmtPct(idr['Perf.1M'])} this month) — that pressures Indonesian stocks, especially banks.`;
+        else if (idr && idr['Perf.1M'] < -0.5) macroTxt += ` Rupiah is strengthening — a tailwind for Indonesian stocks.`;
+        if (idx && idx['Perf.1M'] < -5) macroTxt += ` The IDX index is down ${fmtPct(idx['Perf.1M'])} this month — this is a bear market; bounces are not the same as recoveries.`;
+        items.push({ ic: regime.label === 'RISK-ON' ? '🟢' : regime.label === 'RISK-OFF' ? '🔴' : '🟡', tt: `Market mood: ${regime.label}`, tx: macroTxt });
+
+        const top = radarRows.find((r) => r.score >= 55);
+        if (top) {
+          items.push({ ic: '🎯', tt: `Healthiest chart right now: ${top.disp} (score ${top.score}/100)`,
+            tx: `${fmtPct(top.perfW)} this week, ${fmtPct(top.perf1M)} this month. If you only study one thing today, make it this — click it in the radar for the full trade plan with entry, stop and targets.` });
+        } else {
+          items.push({ ic: '🛡️', tt: 'No strong setups today',
+            tx: 'Nothing scores above 55/100 in the radar. The smartest trade is often no trade — keeping your cash safe IS a position.' });
+        }
+
+        const avoid = radarRows.filter((r) => r.score < 40).slice(-3).map((r) => r.disp);
+        if (avoid.length) {
+          items.push({ ic: '🚫', tt: `Stay away from: ${avoid.join(', ')}`,
+            tx: 'These are still in falling trends. "It’s cheap now" is how people lose money in downtrends — cheap can always get cheaper.' });
+        }
+
+        if (pfValue && pfValue.rows.length) {
+          const worst = [...pfValue.rows].sort((a, b) => a.pnlPct - b.pnlPct)[0];
+          let tx = `Total ${fmtIDR(pfValue.totalIDR)} · today ${fmtIDRsigned(pfValue.dayIDR)}.`;
+          if (worst && worst.pnlPct < -8) tx += ` Biggest drag: ${shortSym(worst.sym)} (${fmtPct(worst.pnlPct)}). Ask yourself the honest question — would you buy it again today? If not, why are you still holding it?`;
+          else tx += ' No position needs emergency attention. Check the radar before adding anything new.';
+          items.push({ ic: pfValue.pnlIDR >= 0 ? '💚' : '💛', tt: `Your PnL: ${fmtIDRsigned(pfValue.pnlIDR)} (${fmtPct(pfValue.pnlPct)})`, tx });
+        } else {
+          items.push({ ic: '📒', tt: 'Track your real PnL here',
+            tx: 'Add what you actually own in “My portfolio” below (symbol, amount, entry price). This page will then mark it to market live and tell you exactly where you stand — in Rupiah.' });
+        }
+
+        const dayIdx = Math.floor(Date.now() / 86_400_000) % DAILY_TIPS.length;
+        items.push({ ic: '💡', tt: 'Rule of the day', tx: DAILY_TIPS[dayIdx] });
+
+        document.getElementById('brief-body').innerHTML = items.map((i) =>
+          `<div class="brief-item"><div class="ic">${i.ic}</div><div><div class="tt">${i.tt}</div><div class="tx">${i.tx}</div></div></div>`).join('');
+      }
+
+      function renderQuantPanel(scan, klines, usdidr) {
         const body = document.getElementById('q-body');
+        const s = scan[SYMBOL];
+        if (!s || s.close == null) {
+          body.innerHTML = '<div class="q-loading">No scanner data for ' + SYMBOL + ' — try another symbol.</div>';
+          return;
+        }
+        const sc = scoreSnapshot(s);
+        const verdict = verdictOf(sc, s);
+        const plan = tradePlan(s, verdict);
+        const metrics = klines ? seriesMetrics(klines.map((k) => k.c)) : null;
+        const horizons = klines
+          ? horizonReturns(klines.map((k) => k.c))
+          : [
+              ['1D', s.change], ['1W', s['Perf.W']], ['1M', s['Perf.1M']],
+              ['3M', s['Perf.3M']], ['6M', s['Perf.6M']], ['YTD', s['Perf.YTD']], ['1Y', s['Perf.Y']],
+            ];
+        const regime = macroRegime(scan);
+
+        const scoreColor = sc.total >= 70 ? 'var(--up)' : sc.total >= 55 ? 'var(--warn)' : sc.total >= 40 ? '#5a6273' : 'var(--down)';
+        const trendRegime =
+          s.close > s.EMA20 && s.EMA20 > s.EMA50 && s.EMA50 > s.EMA200 ? 'Strong uptrend (stacked EMAs)'
+          : s.close > s.EMA200 ? 'Above 200-EMA (long-term intact)'
+          : s.close < s.EMA20 && s.EMA20 < s.EMA50 && s.EMA50 < s.EMA200 ? 'Strong downtrend (inverted EMAs)'
+          : 'Below 200-EMA (long-term broken)';
+        const investLine = s['Perf.6M'] >= 0 && s.close > s.EMA200
+          ? '<b style="color:var(--up)">Invest: OK to DCA</b> — long-term trend intact (above 200-EMA, positive 6M).'
+          : s.close > s.EMA200
+            ? '<b style="color:var(--warn)">Invest: careful</b> — above 200-EMA but 6-month momentum negative; DCA slowly.'
+            : '<b style="color:var(--down)">Invest: falling knife</b> — below the 200-EMA. Waiting for it to reclaim that line costs you a little upside and saves you a lot of pain.';
+
+        const horizonCells = horizons.map(([lab, v]) =>
+          `<div class="h-cell"><div class="lab">${lab}</div><div class="val num ${clsPct(v)}">${fmtPct(v)}</div></div>`).join('');
+
+        const bbPos = s['BB.upper'] > s['BB.lower'] ? ((s.close - s['BB.lower']) / (s['BB.upper'] - s['BB.lower'])) : 0.5;
+        const techCells = [
+          ['RSI (momentum meter)', s.RSI?.toFixed(1), s.RSI > 70 ? 'Too hot — overbought' : s.RSI < 30 ? 'Beaten up — oversold' : s.RSI >= 45 && s.RSI <= 65 ? 'Healthy zone' : 'Neutral'],
+          ['MACD (trend signal)', s['MACD.macd'] > s['MACD.signal'] ? 'Bullish cross' : 'Bearish cross', 'momentum ' + (s['MACD.macd'] > s['MACD.signal'] ? 'building up' : 'fading')],
+          ['Trend health', trendRegime.split(' (')[0], trendRegime.includes('(') ? trendRegime.split(' (')[1].replace(')', '') : ''],
+          ['ADX (trend strength)', s.ADX?.toFixed(1), s.ADX >= 25 ? 'Real trend in motion' : s.ADX >= 20 ? 'Trend developing' : 'Choppy — no clear trend'],
+          ['ATR (daily wiggle)', fmtPrice(s.ATR), 'moves ~' + (s.ATR / s.close * 100).toFixed(1) + '% per day'],
+          ['52-week position', (sc.pos * 100).toFixed(0) + '%', `${fmtPrice(s.price_52_week_low)} – ${fmtPrice(s.price_52_week_high)}`],
+          ['Bollinger position', (bbPos * 100).toFixed(0) + '%', bbPos > 0.85 ? 'Stretched high' : bbPos < 0.15 ? 'At the lows' : 'Middle of range'],
+          ['Crowd signal (TV)', s['Recommend.All'] > 0.3 ? 'BUY' : s['Recommend.All'] > 0.1 ? 'Lean buy' : s['Recommend.All'] < -0.3 ? 'SELL' : s['Recommend.All'] < -0.1 ? 'Lean sell' : 'NEUTRAL', 'TradingView community gauge'],
+        ].map(([lab, val, hint]) =>
+          `<div class="t-cell"><div class="lab">${lab}</div><div class="val num">${val ?? '—'}</div><div class="hint">${hint ?? ''}</div></div>`).join('');
+
+        const econCells = metrics ? [
+          ['Annualized volatility', metrics.annVol.toFixed(1) + '%', 'how wild the ride is'],
+          ['Sharpe ratio (1Y)', metrics.sharpe.toFixed(2), metrics.sharpe > 1 ? 'paid well for the risk' : metrics.sharpe > 0 ? 'barely paid for the risk' : 'risk without reward lately'],
+          ['Sortino ratio', metrics.sortino.toFixed(2), 'like Sharpe, but only counts drops'],
+          ['Max drawdown (1Y)', metrics.maxDD.toFixed(1) + '%', 'worst fall from a peak'],
+          ['Trend drift (regression)', fmtPct(metrics.regDriftAnn, 1) + '/yr', 'R² ' + metrics.r2.toFixed(2) + (metrics.r2 > 0.6 ? ' — strong trend' : metrics.r2 > 0.3 ? ' — moderate' : ' — mostly noise')],
+          ['1-week VaR (95%)', fmtPct(metrics.var95, 1), 'a 1-in-20 bad week looks like this'],
+          ['Weekly win rate', metrics.winWeeks.toFixed(0) + '%', 'share of weeks that ended green'],
+          ['Autocorrelation', metrics.acf1.toFixed(3), metrics.acf1 > 0.05 ? 'moves tend to continue' : metrics.acf1 < -0.05 ? 'moves tend to reverse' : 'close to a coin flip'],
+        ].map(([lab, val, hint]) =>
+          `<div class="t-cell"><div class="lab">${lab}</div><div class="val num">${val}</div><div class="hint">${hint}</div></div>`).join('') : '';
+
+        const macroCells = MACRO_TICKERS.map(([t, name]) => {
+          const m = scan[t];
+          if (!m) return '';
+          return `<div class="t-cell"><div class="lab">${name}</div><div class="val num">${fmtPrice(m.close)}</div>
+            <div class="hint num">1W <span class="${clsPct(m['Perf.W'])}">${fmtPct(m['Perf.W'])}</span> · 1M <span class="${clsPct(m['Perf.1M'])}">${fmtPct(m['Perf.1M'])}</span></div></div>`;
+        }).join('');
+
+        const idrSym = isIDX(SYMBOL);
+        const usd = usdidr;
+
+        body.innerHTML = `
+          <div class="q-toprow">
+            <div class="q-card">
+              <h3>Verdict — ${shortSym(SYMBOL)}</h3>
+              <span class="verdict-badge ${verdict.cls}">${verdict.label}</span>
+              <div class="scorebar"><div style="width:${sc.total}%;background:${scoreColor}"></div></div>
+              <div class="num" style="font-size:12px;color:var(--muted)">Score <b style="color:${scoreColor}">${sc.total}/100</b>
+                — trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
+              <div class="q-simple">${SIMPLE_TERMS[verdict.kind]}</div>
+              <div class="q-reason">${trendRegime}. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
+                ${fmtPct(s['Perf.W'])} this week, ${fmtPct(s['Perf.1M'])} this month.
+                At ${(sc.pos * 100).toFixed(0)}% of its 52-week range.</div>
+              <div class="q-invest">${investLine}</div>
+            </div>
+
+            <div class="q-card">
+              <h3>Trade plan (swing · 2–6 weeks)</h3>
+              <div class="plan-grid num">
+                <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} – ${fmtPrice(plan.entryHigh)}</div></div>
+                <div><div class="lab">Stop loss (1.5×ATR)</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
+                <div><div class="lab">Target 1 (1.5R) — sell half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
+                <div><div class="lab">Target 2 (2.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
+              </div>
+              <div class="plan-note"><b>Exit rules:</b> stop hit → sell, no debate, no averaging down. At Target 1 sell half and move your stop to entry (now you can’t lose).
+                Daily close below the 50-day line (${fmtPrice(s.EMA50)}) → exit the swing. RSI above 75 → take some profit.
+                ${verdict.kind === 'wait' ? '<b>Trigger to enter:</b> a daily close back above the 20-day line (' + fmtPrice(s.EMA20) + ').' : ''}
+                ${verdict.kind === 'avoid' ? '<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the 200-day line (' + fmtPrice(s.EMA200) + ').</b>' : ''}</div>
+            </div>
+
+            <div class="q-card">
+              <h3>Position sizing (risk-based)</h3>
+              <div class="sizer">
+                <div><label>Modal (IDR)</label><input id="q-modal" type="number" value="${MODAL}" min="100000" step="500000"></div>
+                <div><label>Risk per trade %</label><input id="q-risk" type="number" value="${RISKPCT}" min="0.25" max="5" step="0.25" style="width:90px"></div>
+              </div>
+              <div class="size-out num" id="q-size-out" style="margin-top:10px"></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
+              Multi-horizon returns ${klines ? '(computed from daily closes)' : '(TradingView data)'}
+            </h3>
+            <div class="horiz">${horizonCells}</div>
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Technical readout (daily)</h3>
+            <div class="tech-grid">${techCells}</div>
+          </div>
+
+          ${metrics ? `<div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Econometrics (400 daily candles)</h3>
+            <div class="tech-grid">${econCells}</div>
+          </div>` : ''}
+
+          <div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
+              Macro monitor · regime:
+              <span class="regime" style="color:${regime.color}"><span class="dot" style="background:${regime.color}"></span>${regime.label}</span>
+              <span style="font-weight:400;text-transform:none;letter-spacing:0"> — ${regime.note}</span>
+            </h3>
+            <div class="macro-grid">${macroCells}</div>
+          </div>
+
+          <div class="q-foot">
+            <b>Method:</b> score = trend (EMA 20/50/200 stack + MACD, 35) + momentum (RSI zone + 1W/1M sign, 25)
+            + trend strength (ADX, 20) + 52-week positioning (20). Entries/stops/targets are ATR-based (stop 1.5×ATR, targets 1.5R/2.5R).
+            Macro regime votes: DXY 1M ↓, S&amp;P 500 1M ↑, USD/IDR 1M ↓, Gold 1M ↓ → risk-on.
+            Live data via TradingView scanner + Binance. IDX quotes may be delayed. Automated technical analysis — <b>not financial advice</b>.
+          </div>`;
+
+        function sizeOut() {
+          const modal = +document.getElementById('q-modal').value || 0;
+          const riskPct = +document.getElementById('q-risk').value || 1;
+          MODAL = modal; RISKPCT = riskPct; persist();
+          const riskIDR = modal * riskPct / 100;
+          const riskPerUnitIDR = idrSym ? plan.riskPerUnit : usd ? plan.riskPerUnit * usd : null;
+          const el = document.getElementById('q-size-out');
+          if (!riskPerUnitIDR) { el.textContent = 'USD/IDR unavailable for conversion.'; return; }
+          const units = riskIDR / riskPerUnitIDR;
+          const posIDR = units * (idrSym ? plan.entry : plan.entry * usd);
+          const lots = idrSym ? Math.floor(units / 100) : null;
+          el.innerHTML =
+            `Risk budget: <b>${fmtIDR(riskIDR)}</b> (${riskPct}% of modal)<br>` +
+            (idrSym
+              ? `Size: <b>${Math.floor(units).toLocaleString('id-ID')} shares ≈ ${lots} lot</b><br>`
+              : `Size: <b>${units.toFixed(6)} ${shortSym(SYMBOL)}</b><br>`) +
+            `Position value ≈ <b>${fmtIDR(posIDR)}</b> (${(posIDR / modal * 100).toFixed(1)}% of modal)` +
+            (posIDR > modal ? ' <span style="color:var(--down)">— exceeds modal, cap it!</span>' : '');
+        }
+        document.getElementById('q-modal').addEventListener('input', sizeOut);
+        document.getElementById('q-risk').addEventListener('input', sizeOut);
+        sizeOut();
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Orchestrator — one fetch feeds briefing, radar, portfolio, quant    *
+       * ------------------------------------------------------------------ */
+      let liveSeq = 0;
+      async function refreshLive() {
+        const seq = ++liveSeq;
         document.getElementById('q-updated').textContent = 'updating…';
         try {
-          const tickers = [SYMBOL, ...MACRO_TICKERS.map((m) => m[0]).filter((t) => t !== SYMBOL)];
-          const scanP = scanGlobal(tickers);
+          const pf = loadPf();
+          const tickers = [...new Set([
+            SYMBOL,
+            ...MACRO_TICKERS.map((m) => m[0]),
+            ...RADAR_BASKET.map(([, s]) => s),
+            ...pf.positions.map((p) => p.sym),
+          ])];
           const isCrypto = /^BINANCE:.*(USDT|USDC|FDUSD)$/.test(SYMBOL);
-          const klinesP = isCrypto ? binanceKlines(SYMBOL).catch(() => null) : Promise.resolve(null);
-          const [scan, klines] = await Promise.all([scanP, klinesP]);
-          if (seq !== quantSeq) return; // stale response; a newer render is in flight
+          const [scan, klines] = await Promise.all([
+            scanGlobal(tickers),
+            isCrypto ? binanceKlines(SYMBOL).catch(() => null) : Promise.resolve(null),
+          ]);
+          if (seq !== liveSeq) return;
 
-          const s = scan[SYMBOL];
-          if (!s || s.close == null) {
-            body.innerHTML = '<div class="q-loading">No scanner data for ' + SYMBOL + ' — try another symbol.</div>';
-            document.getElementById('q-updated').textContent = '';
-            return;
-          }
-
-          const sc = scoreSnapshot(s);
-          const verdict = verdictOf(sc, s);
-          const plan = tradePlan(s, verdict);
-          const metrics = klines ? seriesMetrics(klines.map((k) => k.c)) : null;
-          const horizons = klines
-            ? horizonReturns(klines.map((k) => k.c))
-            : [
-                ['1D', s.change], ['1W', s['Perf.W']], ['1M', s['Perf.1M']],
-                ['3M', s['Perf.3M']], ['6M', s['Perf.6M']], ['YTD', s['Perf.YTD']], ['1Y', s['Perf.Y']],
-              ];
-          const regime = macroRegime(scan);
           const usdidr = scan['FX_IDC:USDIDR'] ? scan['FX_IDC:USDIDR'].close : null;
-
-          const scoreColor = sc.total >= 70 ? 'var(--up)' : sc.total >= 55 ? 'var(--warn)' : sc.total >= 40 ? '#5a6273' : 'var(--down)';
-          const trendRegime =
-            s.close > s.EMA20 && s.EMA20 > s.EMA50 && s.EMA50 > s.EMA200 ? 'Strong uptrend (stacked EMAs)'
-            : s.close > s.EMA200 ? 'Above 200-EMA (long-term intact)'
-            : s.close < s.EMA20 && s.EMA20 < s.EMA50 && s.EMA50 < s.EMA200 ? 'Strong downtrend (inverted EMAs)'
-            : 'Below 200-EMA (long-term broken)';
-          const investLine = s['Perf.6M'] >= 0 && s.close > s.EMA200
-            ? '<b style="color:var(--up)">Invest: layak DCA</b> — long-term trend intact (above 200-EMA, positive 6M).'
-            : s.close > s.EMA200
-              ? '<b style="color:var(--warn)">Invest: hati-hati</b> — above 200-EMA but 6M momentum negative; DCA slowly.'
-              : '<b style="color:var(--down)">Invest: falling knife</b> — below 200-EMA. DCA only with strong long-term conviction; prefer waiting for the 200-EMA reclaim.';
-
-          const horizonCells = horizons.map(([lab, v]) =>
-            `<div class="h-cell"><div class="lab">${lab}</div><div class="val num ${clsPct(v)}">${fmtPct(v)}</div></div>`).join('');
-
-          const bbPos = s['BB.upper'] > s['BB.lower'] ? ((s.close - s['BB.lower']) / (s['BB.upper'] - s['BB.lower'])) : 0.5;
-          const techCells = [
-            ['RSI (14)', s.RSI?.toFixed(1), s.RSI > 70 ? 'Overbought' : s.RSI < 30 ? 'Oversold' : s.RSI >= 45 && s.RSI <= 65 ? 'Healthy zone' : 'Neutral'],
-            ['MACD', s['MACD.macd'] > s['MACD.signal'] ? 'Bullish cross' : 'Bearish cross', `${s['MACD.macd']?.toFixed(2)} vs ${s['MACD.signal']?.toFixed(2)}`],
-            ['Trend regime', trendRegime.split(' (')[0], trendRegime.includes('(') ? trendRegime.split(' (')[1].replace(')', '') : ''],
-            ['ADX (trend strength)', s.ADX?.toFixed(1), s.ADX >= 25 ? 'Trending market' : s.ADX >= 20 ? 'Developing trend' : 'Choppy / rangebound'],
-            ['ATR (volatility)', fmtPrice(s.ATR), (s.ATR / s.close * 100).toFixed(2) + '% of price / day'],
-            ['52-week position', (sc.pos * 100).toFixed(0) + '%', `${fmtPrice(s.price_52_week_low)} – ${fmtPrice(s.price_52_week_high)}`],
-            ['Bollinger position', (bbPos * 100).toFixed(0) + '%', bbPos > 0.85 ? 'Hugging upper band' : bbPos < 0.15 ? 'At lower band' : 'Inside bands'],
-            ['TV recommendation', s['Recommend.All'] > 0.3 ? 'BUY' : s['Recommend.All'] > 0.1 ? 'Lean buy' : s['Recommend.All'] < -0.3 ? 'SELL' : s['Recommend.All'] < -0.1 ? 'Lean sell' : 'NEUTRAL', 'score ' + s['Recommend.All']?.toFixed(2)],
-          ].map(([lab, val, hint]) =>
-            `<div class="t-cell"><div class="lab">${lab}</div><div class="val num">${val ?? '—'}</div><div class="hint">${hint ?? ''}</div></div>`).join('');
-
-          const econCells = metrics ? [
-            ['Annualized volatility', metrics.annVol.toFixed(1) + '%', 'σ of daily log returns × √365'],
-            ['Sharpe ratio (1Y)', metrics.sharpe.toFixed(2), 'rf = 4% — ' + (metrics.sharpe > 1 ? 'good' : metrics.sharpe > 0 ? 'weak' : 'negative')],
-            ['Sortino ratio', metrics.sortino.toFixed(2), 'downside-only risk'],
-            ['Max drawdown (1Y)', metrics.maxDD.toFixed(1) + '%', 'worst peak-to-trough'],
-            ['Regression drift', fmtPct(metrics.regDriftAnn, 1) + '/yr', 'R² = ' + metrics.r2.toFixed(2) + (metrics.r2 > 0.6 ? ' (strong trend)' : metrics.r2 > 0.3 ? ' (moderate)' : ' (noisy)')],
-            ['1-week VaR (95%)', fmtPct(metrics.var95, 1), 'historical, 1-in-20 bad week'],
-            ['Weekly win rate', metrics.winWeeks.toFixed(0) + '%', 'share of positive 7-day windows'],
-            ['Autocorrelation (lag-1)', metrics.acf1.toFixed(3), metrics.acf1 > 0.05 ? 'momentum persists' : metrics.acf1 < -0.05 ? 'mean-reverting' : 'near-random walk'],
-          ].map(([lab, val, hint]) =>
-            `<div class="t-cell"><div class="lab">${lab}</div><div class="val num">${val}</div><div class="hint">${hint}</div></div>`).join('') : '';
-
-          const macroCells = MACRO_TICKERS.map(([t, name]) => {
-            const m = scan[t];
-            if (!m) return '';
-            return `<div class="t-cell"><div class="lab">${name}</div><div class="val num">${fmtPrice(m.close)}</div>
-              <div class="hint num">1W <span class="${clsPct(m['Perf.W'])}">${fmtPct(m['Perf.W'])}</span> · 1M <span class="${clsPct(m['Perf.1M'])}">${fmtPct(m['Perf.1M'])}</span></div></div>`;
-          }).join('');
-
-          const isIDR = SYMBOL.startsWith('IDX:');
-          const unitCcy = isIDR ? 'IDR' : 'USD';
-
-          body.innerHTML = `
-            <div class="q-toprow">
-              <div class="q-card">
-                <h3>Verdict — ${SYMBOL.split(':').pop()}</h3>
-                <span class="verdict-badge ${verdict.cls}">${verdict.label}</span>
-                <div class="scorebar"><div style="width:${sc.total}%;background:${scoreColor}"></div></div>
-                <div class="num" style="font-size:12px;color:var(--muted)">Composite score <b style="color:${scoreColor}">${sc.total}/100</b>
-                  — trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
-                <div class="q-reason">${trendRegime}. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
-                  ${fmtPct(s['Perf.W'])} this week, ${fmtPct(s['Perf.1M'])} this month.
-                  Sitting at ${(sc.pos * 100).toFixed(0)}% of its 52-week range.</div>
-                <div class="q-invest">${investLine}</div>
-              </div>
-
-              <div class="q-card">
-                <h3>Trade plan (swing · 2–6 weeks)</h3>
-                <div class="plan-grid num">
-                  <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} – ${fmtPrice(plan.entryHigh)}</div></div>
-                  <div><div class="lab">Stop loss (1.5×ATR)</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
-                  <div><div class="lab">Target 1 (1.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
-                  <div><div class="lab">Target 2 (2.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
-                </div>
-                <div class="plan-note"><b>Exit rules:</b> stop hit → out, no averaging down. Take 50% at T1, trail rest with EMA-20.
-                  Daily close below EMA-50 (${fmtPrice(s.EMA50)}) → exit swing. RSI &gt; 75 → trim.
-                  ${verdict.kind === 'wait' ? 'Trigger: wait for a daily close back above EMA-20 (' + fmtPrice(s.EMA20) + ') before entering.' : ''}
-                  ${verdict.kind === 'avoid' ? '<b style="color:var(--down)">No long setup — reclaiming the 200-EMA (' + fmtPrice(s.EMA200) + ') is the first signal worth watching.</b>' : ''}</div>
-              </div>
-
-              <div class="q-card">
-                <h3>Position sizing (risk-based)</h3>
-                <div class="sizer">
-                  <div><label>Modal (IDR)</label><input id="q-modal" type="number" value="${MODAL}" min="100000" step="500000"></div>
-                  <div><label>Risk per trade %</label><input id="q-risk" type="number" value="${RISKPCT}" min="0.25" max="5" step="0.25" style="width:90px"></div>
-                </div>
-                <div class="size-out num" id="q-size-out" style="margin-top:10px"></div>
-              </div>
-            </div>
-
-            <div>
-              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
-                Multi-horizon returns ${klines ? '(computed from daily closes)' : '(TradingView data)'}
-              </h3>
-              <div class="horiz">${horizonCells}</div>
-            </div>
-
-            <div>
-              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Technical readout (daily)</h3>
-              <div class="tech-grid">${techCells}</div>
-            </div>
-
-            ${metrics ? `<div>
-              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Econometrics (400 daily candles)</h3>
-              <div class="tech-grid">${econCells}</div>
-            </div>` : ''}
-
-            <div>
-              <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">
-                Macro monitor · regime:
-                <span class="regime" style="color:${regime.color}"><span class="dot" style="background:${regime.color}"></span>${regime.label}</span>
-                <span style="font-weight:400;text-transform:none;letter-spacing:0"> — ${regime.note}</span>
-              </h3>
-              <div class="macro-grid">${macroCells}</div>
-            </div>
-
-            <div class="q-foot">
-              <b>Method:</b> composite score = trend (EMA 20/50/200 stack + MACD, 35 pts) + momentum (RSI zone + 1W/1M sign, 25 pts)
-              + trend strength (ADX, 20 pts) + 52-week positioning (20 pts). Entry/stop/targets are ATR-based (stop 1.5×ATR, targets 1.5R/2.5R).
-              Macro regime votes: DXY 1M ↓, S&amp;P 500 1M ↑, USD/IDR 1M ↓, Gold 1M ↓ → risk-on.
-              ${metrics ? 'Crypto econometrics computed client-side from Binance daily closes (log returns; rf 4%).' : ''}
-              Live data via TradingView scanner${isCrypto ? ' + Binance' : ''}; IDX quotes may be delayed.
-              Automated technical analysis — <b>not financial advice</b>.
-            </div>`;
-
+          const radarRows = renderRadar(scan);
+          const pfValue = renderPortfolio(scan, usdidr);
+          renderBriefing(scan, radarRows, pfValue, usdidr);
+          renderQuantPanel(scan, klines, usdidr);
           document.getElementById('q-updated').textContent =
             'Updated ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta' }) + ' WIB';
-
-          /* position sizing interactivity */
-          function sizeOut() {
-            const modal = +document.getElementById('q-modal').value || 0;
-            const riskPct = +document.getElementById('q-risk').value || 1;
-            MODAL = modal; RISKPCT = riskPct; persist();
-            const riskIDR = modal * riskPct / 100;
-            const riskPerUnitIDR = isIDR ? plan.riskPerUnit : usdidr ? plan.riskPerUnit * usdidr : null;
-            const el = document.getElementById('q-size-out');
-            if (!riskPerUnitIDR) { el.textContent = 'USD/IDR unavailable for conversion.'; return; }
-            const units = riskIDR / riskPerUnitIDR;
-            const posIDR = units * (isIDR ? plan.entry : plan.entry * usdidr);
-            const lots = isIDR ? Math.floor(units / 100) : null;
-            el.innerHTML =
-              `Risk budget: <b>${fmtIDR(riskIDR)}</b> (${riskPct}% of modal)<br>` +
-              (isIDR
-                ? `Size: <b>${Math.floor(units).toLocaleString('id-ID')} shares ≈ ${lots} lot</b><br>`
-                : `Size: <b>${units.toFixed(6)} ${SYMBOL.split(':').pop().replace(/USDT|USDC/, '')}</b><br>`) +
-              `Position value ≈ <b>${fmtIDR(posIDR)}</b> (${(posIDR / modal * 100).toFixed(1)}% of modal)` +
-              (posIDR > modal ? ' <span style="color:var(--down)">— exceeds modal, cap it!</span>' : '');
-          }
-          document.getElementById('q-modal').addEventListener('input', sizeOut);
-          document.getElementById('q-risk').addEventListener('input', sizeOut);
-          sizeOut();
         } catch (err) {
-          if (seq !== quantSeq) return;
-          body.innerHTML = '<div class="q-loading">Could not load live data (' + err.message + '). Check connection and hit ↻ Refresh.</div>';
+          if (seq !== liveSeq) return;
+          document.getElementById('brief-body').innerHTML =
+            '<div class="q-loading">Could not load live data (' + err.message + '). Check connection and hit ↻ Refresh.</div>';
           document.getElementById('q-updated').textContent = '';
         }
       }
@@ -823,7 +1216,8 @@
         sym = (sym || '').trim().toUpperCase();
         if (!sym || sym === SYMBOL) return;
         SYMBOL = sym; persist();
-        renderSymbolWidgets(); syncChips(); renderQuant();
+        renderSymbolWidgets(); syncChips(); refreshLive();
+        document.getElementById('quant').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       function buildChips() {
@@ -859,14 +1253,14 @@
       }
       function toggleTheme() {
         THEME = THEME === 'dark' ? 'light' : 'dark'; persist();
-        applyTheme(); renderAll();
+        applyTheme(); renderAllWidgets();
       }
 
       /* ------------------------------------------------------------------ *
        * Init                                                               *
        * ------------------------------------------------------------------ */
       document.getElementById('theme-btn').addEventListener('click', toggleTheme);
-      document.getElementById('q-refresh').addEventListener('click', renderQuant);
+      document.getElementById('q-refresh').addEventListener('click', refreshLive);
       document.getElementById('search-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const v = document.getElementById('search-input').value;
@@ -875,9 +1269,9 @@
 
       buildChips();
       applyTheme();
-      renderAll();
-      renderQuant();
-      setInterval(renderQuant, 90_000); // refresh analysis every 90s
+      renderAllWidgets();
+      refreshLive();
+      setInterval(refreshLive, 90_000);
     </script>
   </body>
 </html>
