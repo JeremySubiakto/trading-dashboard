@@ -289,6 +289,18 @@
       .refresh:hover { color: var(--text); border-color: var(--accent); }
       .q-loading { padding: 30px; text-align: center; color: var(--subtle); font-size: 13px; }
 
+      .tfseg {
+        display: inline-flex; border: 1px solid var(--border); border-radius: 9px;
+        overflow: hidden; background: var(--panel-2);
+      }
+      .tfseg button {
+        border: 0; background: transparent; color: var(--muted); padding: 5px 12px;
+        font-size: 12px; font-weight: 700; cursor: pointer; transition: .12s;
+      }
+      .tfseg button.active { background: var(--accent); color: #fff; }
+      .tfseg button:not(.active):hover { color: var(--text); }
+      .tf-hold { font-size: 11px; color: var(--subtle); }
+
       .pos { color: var(--up); font-weight: 700; }
       .neg { color: var(--down); font-weight: 700; }
       .neu { color: var(--muted); font-weight: 600; }
@@ -374,7 +386,7 @@
         <section class="panel" id="radar">
           <div class="panel-head">
             <h2>Opportunity radar</h2>
-            <span class="sub">Every symbol scored 0–100 · click a row to open it</span>
+            <span class="sub" id="radar-sub">Every market scored 0–100 · click a row to open it</span>
           </div>
           <div class="panel-body" style="overflow-x:auto" id="radar-body">
             <div class="q-loading">Scanning…</div>
@@ -404,9 +416,13 @@
 
       <!-- Quant Lab -->
       <section class="panel" id="quant">
-        <div class="panel-head">
+        <div class="panel-head" style="flex-wrap:wrap">
           <h2>Quant Lab · deep analysis</h2>
-          <span class="sub" id="quant-sub">for the selected symbol</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="tf-hold" id="tf-hold"></span>
+            <span class="tfseg" id="tf-seg" title="Trading timeframe — entries, stops, take profits and projections all recompute for this horizon"></span>
+            <span class="sub" id="quant-sub">for the selected symbol</span>
+          </span>
         </div>
         <div class="q-body" id="q-body">
           <div class="q-loading">Fetching live market data…</div>
@@ -485,10 +501,33 @@
       let THEME = saved.theme || 'dark';
       let MODAL = saved.modal || 10_000_000;
       let RISKPCT = saved.riskPct || 1;
+      let TF = saved.tf || '1D';
 
       function persist() {
-        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT })); } catch {}
+        try { localStorage.setItem(STORE_KEY, JSON.stringify({ symbol: SYMBOL, theme: THEME, modal: MODAL, riskPct: RISKPCT, tf: TF })); } catch {}
       }
+
+      /* ---------------- Timeframe engine ----------------
+       * Everything downstream (indicators, ATR stops/targets, projections,
+       * hold-time guidance) recomputes for the selected timeframe.           */
+      const TF_CONFIG = {
+        '15':  { label: '15m', suffix: '|15',  chart: '15',  ta: '15m', binance: '15m', barsPerYear: 35040,
+                 projBars: 32, projLabel: 'next 8 hours', quarters: ['2h', '4h', '6h', '8h'],
+                 style: 'SCALP', hold: 'Scalp — minutes to a few hours', barName: '15-minute' },
+        '60':  { label: '1h',  suffix: '|60',  chart: '60',  ta: '1h',  binance: '1h',  barsPerYear: 8760,
+                 projBars: 48, projLabel: 'next 2 days', quarters: ['12h', '1 day', '36h', '2 days'],
+                 style: 'DAY TRADE', hold: 'Day trade — hours to a day', barName: 'hourly' },
+        '240': { label: '4h',  suffix: '|240', chart: '240', ta: '4h',  binance: '4h',  barsPerYear: 2190,
+                 projBars: 42, projLabel: 'next week', quarters: ['~2 days', '~3.5 days', '~5 days', '7 days'],
+                 style: 'SHORT SWING', hold: 'Short swing — 1 to 5 days', barName: '4-hour' },
+        '1D':  { label: '1D',  suffix: '',     chart: 'D',   ta: '1D',  binance: '1d',  barsPerYear: 365,
+                 projBars: 28, projLabel: 'next 4 weeks', quarters: ['1W', '2W', '3W', '4W'],
+                 style: 'SWING', hold: 'Swing — 2 to 6 weeks', barName: 'daily' },
+        '1W':  { label: '1W',  suffix: '|1W',  chart: 'W',   ta: '1W',  binance: '1w',  barsPerYear: 52,
+                 projBars: 26, projLabel: 'next 6 months', quarters: ['6W', '3M', '4.5M', '6M'],
+                 style: 'INVEST', hold: 'Invest — months to years', barName: 'weekly' },
+      };
+      const tfc = () => TF_CONFIG[TF];
 
       /* Portfolio storage: { positions:[{id,sym,qty,entry,addedAt}], closed:[{sym,qty,entry,exit,realizedIDR,closedAt}] } */
       function loadPf() {
@@ -509,13 +548,18 @@
         ],
         Crypto: [['BTC', 'BINANCE:BTCUSDT'], ['ETH', 'BINANCE:ETHUSDT'], ['SOL', 'BINANCE:SOLUSDT'], ['BNB', 'BINANCE:BNBUSDT']],
         Stocks: [['AAPL', 'NASDAQ:AAPL'], ['TSLA', 'NASDAQ:TSLA'], ['NVDA', 'NASDAQ:NVDA'], ['MSFT', 'NASDAQ:MSFT']],
+        Commodities: [['XAU/USD', 'OANDA:XAUUSD'], ['Silver', 'TVC:SILVER'], ['WTI Oil', 'NYMEX:CL1!']],
+        Indices: [['S&P 500', 'SP:SPX'], ['Nasdaq 100', 'NASDAQ:NDX']],
         Forex: [['USD/IDR', 'FX_IDC:USDIDR'], ['EUR/USD', 'FX:EURUSD'], ['USD/JPY', 'OANDA:USDJPY']],
       };
-      /* Radar scores tradeable stocks + crypto (no index, no forex — confusing for picks). */
+      /* Radar scores every tradeable market: stocks, crypto, commodities, indices, forex. */
       const RADAR_BASKET = [
         ...GROUPS.Indonesia.filter(([, s]) => s !== 'IDX:COMPOSITE'),
         ...GROUPS.Crypto,
         ...GROUPS.Stocks,
+        ...GROUPS.Commodities,
+        ...GROUPS.Indices,
+        ...GROUPS.Forex,
       ];
 
       const TICKER_SYMBOLS = [
@@ -529,8 +573,10 @@
         { proName: 'NASDAQ:AAPL', title: 'Apple' },
         { proName: 'NASDAQ:NVDA', title: 'Nvidia' },
         { proName: 'TVC:DXY', title: 'DXY' },
-        { proName: 'TVC:GOLD', title: 'Gold' },
+        { proName: 'OANDA:XAUUSD', title: 'XAU/USD' },
+        { proName: 'TVC:SILVER', title: 'Silver' },
         { proName: 'TVC:USOIL', title: 'Oil' },
+        { proName: 'SP:SPX', title: 'S&P 500' },
       ];
 
       const MARKET_TABS = [
@@ -551,6 +597,11 @@
           { s: 'NASDAQ:NVDA', d: 'Nvidia' }, { s: 'NASDAQ:MSFT', d: 'Microsoft' },
           { s: 'NASDAQ:AMZN', d: 'Amazon' }, { s: 'NASDAQ:GOOGL', d: 'Alphabet' },
         ], originalTitle: 'US Stocks' },
+        { title: 'Commodities', symbols: [
+          { s: 'OANDA:XAUUSD', d: 'Gold (XAU/USD)' }, { s: 'TVC:SILVER', d: 'Silver' },
+          { s: 'TVC:USOIL', d: 'WTI Oil' }, { s: 'TVC:UKOIL', d: 'Brent Oil' },
+          { s: 'SP:SPX', d: 'S&P 500' }, { s: 'NASDAQ:NDX', d: 'Nasdaq 100' },
+        ], originalTitle: 'Commodities' },
         { title: 'Forex & Macro', symbols: [
           { s: 'FX_IDC:USDIDR', d: 'USD/IDR' }, { s: 'FX:EURUSD', d: 'EUR/USD' },
           { s: 'OANDA:USDJPY', d: 'USD/JPY' }, { s: 'TVC:DXY', d: 'Dollar Index' },
@@ -587,7 +638,7 @@
       }
       function renderChart() {
         tvWidget('chart', 'embed-widget-advanced-chart.js', {
-          autosize: true, symbol: SYMBOL, interval: 'D', timezone: 'Asia/Jakarta',
+          autosize: true, symbol: SYMBOL, interval: tfc().chart, timezone: 'Asia/Jakarta',
           theme: THEME, style: '1', locale: 'en', hide_side_toolbar: false,
           allow_symbol_change: true, save_image: true, withdateranges: true,
           details: true, studies: ['STD;EMA', 'STD;RSI'], support_host: 'https://www.tradingview.com',
@@ -595,7 +646,7 @@
       }
       function renderTA() {
         tvWidget('ta', 'embed-widget-technical-analysis.js', {
-          interval: '1D', width: '100%', height: '100%', isTransparent: true,
+          interval: tfc().ta, width: '100%', height: '100%', isTransparent: true,
           symbol: SYMBOL, showIntervalTabs: true, displayMode: 'single',
           locale: 'en', colorTheme: THEME,
         });
@@ -640,54 +691,78 @@
       /* ------------------------------------------------------------------ *
        * Live data engine                                                    *
        * ------------------------------------------------------------------ */
-      const SCAN_COLS = [
+      /* Calendar-based context columns — always daily, never suffixed. */
+      const BASE_COLS = [
         'close','change','Perf.W','Perf.1M','Perf.3M','Perf.6M','Perf.YTD','Perf.Y',
-        'Volatility.M','RSI','MACD.macd','MACD.signal',
-        'EMA20','EMA50','EMA200','ADX','ATR','Recommend.All',
-        'price_52_week_high','price_52_week_low','BB.upper','BB.lower','volume',
+        'Volatility.M','price_52_week_high','price_52_week_low','volume',
+      ];
+      /* Indicator columns — computed on the selected timeframe via |suffix. */
+      const TA_COLS = [
+        'RSI','MACD.macd','MACD.signal','EMA20','EMA50','EMA200','ADX','ATR',
+        'Recommend.All','BB.upper','BB.lower',
       ];
       const MACRO_TICKERS = [
         ['FX_IDC:USDIDR','USD/IDR'], ['TVC:DXY','Dollar Index'], ['TVC:GOLD','Gold'],
-        ['TVC:USOIL','WTI Oil'], ['IDX:COMPOSITE','IDX Composite'], ['SP:SPX','S&P 500'],
+        ['OANDA:XAUUSD','XAU/USD'], ['IDX:COMPOSITE','IDX Composite'], ['SP:SPX','S&P 500'],
         ['BINANCE:BTCUSDT','Bitcoin'],
       ];
 
+      /**
+       * Fetch live data for `tickers` with indicators on the selected timeframe.
+       * If a market has no data on that timeframe (e.g. futures intraday on the
+       * free feed), its indicators silently fall back to daily and the symbol
+       * is flagged `_tfFallback` so the UI can say so.
+       */
       async function scanGlobal(tickers) {
+        const sfx = tfc().suffix;
+        const pairs = [
+          ...BASE_COLS.map((c) => ({ key: c, col: c })),
+          ...TA_COLS.map((c) => ({ key: c, col: c + sfx })),
+          ...(sfx ? TA_COLS.map((c) => ({ key: 'd_' + c, col: c })) : []),
+        ];
         const r = await fetch('https://scanner.tradingview.com/global/scan', {
           method: 'POST',
-          body: JSON.stringify({ symbols: { tickers }, columns: SCAN_COLS }),
+          body: JSON.stringify({ symbols: { tickers }, columns: pairs.map((p) => p.col) }),
         });
         if (!r.ok) throw new Error('scanner HTTP ' + r.status);
         const j = await r.json();
         const map = {};
         (j.data || []).forEach((row) => {
           const o = {};
-          SCAN_COLS.forEach((c, i) => (o[c] = row.d[i]));
+          pairs.forEach((p, i) => (o[p.key] = row.d[i]));
+          if (sfx) {
+            // Timeframe data missing → fall back to daily indicators.
+            let fell = false;
+            for (const c of TA_COLS) {
+              if (o[c] == null && o['d_' + c] != null) { o[c] = o['d_' + c]; fell = true; }
+            }
+            o._tfFallback = fell && o.RSI != null;
+          }
           map[row.s] = o;
         });
         return map;
       }
 
-      async function binanceKlines(sym, limit = 400) {
+      async function binanceKlines(sym, interval = '1d', limit = 500) {
         const pair = sym.split(':')[1];
-        const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=1d&limit=${limit}`);
+        const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${limit}`);
         if (!r.ok) throw new Error('binance HTTP ' + r.status);
         const rows = await r.json();
         return rows.map((k) => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
       }
 
-      function seriesMetrics(closes) {
+      function seriesMetrics(closes, barsPerYear = 365, varWindow = 7) {
         const n = closes.length;
         const rets = [];
         for (let i = 1; i < n; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
         const mean = rets.reduce((s, x) => s + x, 0) / rets.length;
         const sd = Math.sqrt(rets.reduce((s, x) => s + (x - mean) ** 2, 0) / (rets.length - 1));
-        const annVol = sd * Math.sqrt(365) * 100;
+        const annVol = sd * Math.sqrt(barsPerYear) * 100;
         const rf = 0.04;
-        const sharpe = (mean * 365 - rf) / (sd * Math.sqrt(365));
+        const sharpe = (mean * barsPerYear - rf) / (sd * Math.sqrt(barsPerYear));
         const downside = rets.filter((x) => x < 0);
         const dsd = Math.sqrt(downside.reduce((s, x) => s + x * x, 0) / Math.max(1, downside.length));
-        const sortino = (mean * 365 - rf) / (dsd * Math.sqrt(365));
+        const sortino = (mean * barsPerYear - rf) / (dsd * Math.sqrt(barsPerYear));
         let peak = closes[0], maxDD = 0;
         for (const c of closes) { if (c > peak) peak = c; maxDD = Math.min(maxDD, c / peak - 1); }
         const logs = closes.map((c) => Math.log(c));
@@ -697,13 +772,13 @@
         for (let i = 0; i < n; i++) { sxy += (xs[i] - xm) * (logs[i] - ym); sxx += (xs[i] - xm) ** 2; syy += (logs[i] - ym) ** 2; }
         const slope = sxy / sxx;
         const r2 = syy > 0 ? (sxy * sxy) / (sxx * syy) : 0;
-        const regDriftAnn = slope * 365 * 100;
+        const regDriftAnn = slope * barsPerYear * 100;
         let acNum = 0, acDen = 0;
         for (let i = 1; i < rets.length; i++) acNum += (rets[i] - mean) * (rets[i - 1] - mean);
         for (const x of rets) acDen += (x - mean) ** 2;
         const acf1 = acDen > 0 ? acNum / acDen : 0;
         const wk = [];
-        for (let i = 7; i < n; i++) wk.push(closes[i] / closes[i - 7] - 1);
+        for (let i = varWindow; i < n; i++) wk.push(closes[i] / closes[i - varWindow] - 1);
         wk.sort((a, b) => a - b);
         const var95 = wk.length ? wk[Math.floor(wk.length * 0.05)] * 100 : null;
         const winWeeks = wk.length ? (wk.filter((x) => x > 0).length / wk.length) * 100 : null;
@@ -749,40 +824,41 @@
         return x > 0 ? 1 - p : p;
       }
 
-      /** Bootstrap Monte Carlo: 1,500 paths × 28 days resampled from the last year of real daily returns. */
-      function mcProjection(closes, spot, stop, t1, sym) {
-        const src = closes.slice(-366);
+      /** Bootstrap Monte Carlo: 1,500 paths over `H` bars resampled from real returns at the selected timeframe. */
+      function mcProjection(closes, spot, stop, t1, sym, H, barName) {
+        const src = closes.slice(-500);
         const rets = [];
         for (let i = 1; i < src.length; i++) rets.push(Math.log(src[i] / src[i - 1]));
-        // Seed on symbol + date so numbers are stable within a day (no jitter every refresh).
-        const rng = mulberry(hashStr(sym + new Date().toISOString().slice(0, 10)));
-        const N = 1500, H = 28;
-        const daily = Array.from({ length: H }, () => []);
+        // Seed on symbol + timeframe + date so numbers are stable within a day (no jitter every refresh).
+        const rng = mulberry(hashStr(sym + TF + new Date().toISOString().slice(0, 10)));
+        const N = 1500;
+        const perBar = Array.from({ length: H }, () => []);
         let touchT1 = 0, touchStop = 0, t1First = 0;
         for (let n = 0; n < N; n++) {
           let p = spot, hT = false, hS = false, first = false;
           for (let d = 0; d < H; d++) {
             p *= Math.exp(rets[Math.floor(rng() * rets.length)]);
-            daily[d].push(p);
+            perBar[d].push(p);
             if (!hT && p >= t1) { hT = true; if (!hS) first = true; }
             if (!hS && p <= stop) hS = true;
           }
           if (hT) touchT1++; if (hS) touchStop++; if (first) t1First++;
         }
-        const bands = daily.map((a) => ({
+        const bands = perBar.map((a) => ({
           p5: percentile(a, 0.05), p25: percentile(a, 0.25), p50: percentile(a, 0.5),
           p75: percentile(a, 0.75), p95: percentile(a, 0.95),
         }));
         return {
-          bands, H, weekDays: 7, pT1: touchT1 / N, pStop: touchStop / N, pT1First: t1First / N,
-          method: 'Bootstrap Monte Carlo — 1,500 paths resampled from the last 12 months of actual daily returns. Touch probabilities are path-based (counted along each simulated path).',
+          bands, H, pT1: touchT1 / N, pStop: touchStop / N, pT1First: t1First / N,
+          method: `Bootstrap Monte Carlo — 1,500 paths resampled from ${rets.length.toLocaleString()} real ${barName} returns. Touch probabilities are path-based (counted along each simulated path).`,
         };
       }
 
-      /** Parametric fallback when no daily history is available (IDX / US stocks). */
-      function gbmProjection(spot, dailyVolPct, stop, t1) {
-        const sd = Math.max(0.003, (dailyVolPct || 2) / 100);
-        const H = 20; // trading days ≈ 4 weeks
+      /** Parametric fallback when no bar history is available (stocks, commodities, forex). */
+      function gbmProjection(spot, atrTf, dailyVolPct, stop, t1, H, barName) {
+        // Per-bar sigma from the timeframe ATR (range ≈ 1.6 sigma); daily vol as backstop.
+        const fromAtr = atrTf && spot ? (atrTf / spot) / 1.6 : null;
+        const sd = Math.max(0.0005, fromAtr || (dailyVolPct || 2) / 100 / 1.6);
         const zs = { p5: -1.645, p25: -0.674, p50: 0, p75: 0.674, p95: 1.645 };
         const bands = [];
         for (let d = 1; d <= H; d++) {
@@ -795,14 +871,14 @@
         const pStop = Math.min(1, 2 * normCdf(Math.log(stop / spot) / sT));
         const pT1 = Math.min(1, 2 * (1 - normCdf(Math.log(t1 / spot) / sT)));
         return {
-          bands, H, weekDays: 5, pT1, pStop, pT1First: null,
-          method: 'Parametric model (driftless GBM) using TradingView monthly volatility — an approximation; touch probabilities use the reflection principle. No free daily history exists for this market, so treat these as rough bands.',
+          bands, H, pT1, pStop, pT1First: null,
+          method: `Parametric model (driftless GBM); per-${barName}-bar volatility derived from the ${barName} ATR (range ≈ 1.6 sigma). An approximation — touch probabilities use the reflection principle; treat as rough bands.`,
         };
       }
 
       /** Fan chart: 90% and 50% bands + median path + stop/target levels. Pure SVG, no libs. */
-      function fanSVG(proj, spot, stop, t1) {
-        const { bands, H, weekDays } = proj;
+      function fanSVG(proj, spot, stop, t1, quarterLabels) {
+        const { bands, H } = proj;
         const W = 680, Ht = 200, mL = 62, mR = 10, mT = 12, mB = 24;
         const lo = Math.min(stop, ...bands.map((b) => b.p5)) * 0.995;
         const hi = Math.max(t1, ...bands.map((b) => b.p95)) * 1.005;
@@ -814,42 +890,44 @@
           return `${X(H - i).toFixed(1)},${Y(b[k]).toFixed(1)}`;
         }).join(' ');
         const area = (loK, hiK) => `${X(0).toFixed(1)},${Y(spot).toFixed(1)} ${fwd(hiK)} ${back(loK)}`;
-        const weeks = [1, 2, 3, 4].map((w) => ({ x: X(Math.min(H, w * weekDays)), lab: w + 'W' }));
-        return `<svg viewBox="0 0 ${W} ${Ht}" style="width:100%;height:auto;display:block" role="img" aria-label="4-week price projection fan chart">
-          ${weeks.map((w) => `<line x1="${w.x}" y1="${mT}" x2="${w.x}" y2="${Ht - mB}" stroke="var(--border)" stroke-width="1" opacity="0.7"/>`).join('')}
+        const marks = quarterLabels.map((lab, i) => ({ x: X(Math.round(((i + 1) / 4) * H)), lab }));
+        return `<svg viewBox="0 0 ${W} ${Ht}" style="width:100%;height:auto;display:block" role="img" aria-label="Price projection fan chart">
+          ${marks.map((w) => `<line x1="${w.x}" y1="${mT}" x2="${w.x}" y2="${Ht - mB}" stroke="var(--border)" stroke-width="1" opacity="0.7"/>`).join('')}
           <polygon points="${area('p5', 'p95')}" fill="var(--accent)" opacity="0.10"/>
           <polygon points="${area('p25', 'p75')}" fill="var(--accent)" opacity="0.18"/>
           <polyline points="${X(0).toFixed(1)},${Y(spot).toFixed(1)} ${fwd('p50')}" fill="none" stroke="var(--accent)" stroke-width="2"/>
           <line x1="${mL}" y1="${Y(t1)}" x2="${W - mR}" y2="${Y(t1)}" stroke="var(--up)" stroke-dasharray="5 4" stroke-width="1.4"/>
           <line x1="${mL}" y1="${Y(stop)}" x2="${W - mR}" y2="${Y(stop)}" stroke="var(--down)" stroke-dasharray="5 4" stroke-width="1.4"/>
-          <text x="${W - mR - 4}" y="${Y(t1) - 5}" text-anchor="end" font-size="10.5" fill="var(--up)">T1 ${fmtPrice(t1)}</text>
+          <text x="${W - mR - 4}" y="${Y(t1) - 5}" text-anchor="end" font-size="10.5" fill="var(--up)">TP ${fmtPrice(t1)}</text>
           <text x="${W - mR - 4}" y="${Y(stop) + 13}" text-anchor="end" font-size="10.5" fill="var(--down)">Stop ${fmtPrice(stop)}</text>
           <text x="${mL - 6}" y="${Y(spot) + 4}" text-anchor="end" font-size="10.5" fill="var(--muted)">${fmtPrice(spot)}</text>
-          ${weeks.map((w) => `<text x="${w.x}" y="${Ht - 8}" text-anchor="middle" font-size="10.5" fill="var(--subtle)">${w.lab}</text>`).join('')}
+          ${marks.map((w) => `<text x="${w.x}" y="${Ht - 8}" text-anchor="middle" font-size="10.5" fill="var(--subtle)">${w.lab}</text>`).join('')}
         </svg>`;
       }
 
       /** Full projection section HTML for the Quant Lab. */
       function projectionHTML(proj, spot) {
-        const wkRows = [1, 2, 3, 4].map((w) => {
-          const b = proj.bands[Math.min(proj.H, w * proj.weekDays) - 1];
+        const cfg = tfc();
+        const rows = cfg.quarters.map((lab, i) => {
+          const b = proj.bands[Math.max(0, Math.round(((i + 1) / 4) * proj.H) - 1)];
           const pc = (v) => fmtPct((v / spot - 1) * 100);
-          return `<div class="h-cell"><div class="lab">${w}W median</div>
+          return `<div class="h-cell"><div class="lab">${lab} median</div>
             <div class="val num ${clsPct(b.p50 - spot)}">${pc(b.p50)}</div>
             <div style="font-size:10.5px;color:var(--subtle)" class="num">90%: ${pc(b.p5)} … ${pc(b.p95)}</div></div>`;
         }).join('');
+        const horizonName = cfg.projLabel.replace('next ', '');
         const probs = `
-          <div class="h-cell"><div class="lab">P(hit Target 1 in 4W)</div><div class="val num" style="color:var(--up)">${Math.round(proj.pT1 * 100)}%</div></div>
-          <div class="h-cell"><div class="lab">P(hit Stop in 4W)</div><div class="val num" style="color:var(--down)">${Math.round(proj.pStop * 100)}%</div></div>
-          ${proj.pT1First != null ? `<div class="h-cell"><div class="lab">P(Target before Stop)</div><div class="val num">${Math.round(proj.pT1First * 100)}%</div></div>` : ''}`;
+          <div class="h-cell"><div class="lab">P(hit TP in ${horizonName})</div><div class="val num" style="color:var(--up)">${Math.round(proj.pT1 * 100)}%</div></div>
+          <div class="h-cell"><div class="lab">P(hit Stop in ${horizonName})</div><div class="val num" style="color:var(--down)">${Math.round(proj.pStop * 100)}%</div></div>
+          ${proj.pT1First != null ? `<div class="h-cell"><div class="lab">P(TP before Stop)</div><div class="val num">${Math.round(proj.pT1First * 100)}%</div></div>` : ''}`;
         return `
           <div>
-            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Projection — next 4 weeks (model, not a promise)</h3>
-            <div class="q-card" style="padding:10px 12px">${fanSVG(proj, spot, proj._stop, proj._t1)}</div>
-            <div class="horiz" style="margin-top:8px">${wkRows}${probs}</div>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Projection — ${cfg.projLabel} on the ${cfg.label} timeframe (model, not a promise)</h3>
+            <div class="q-card" style="padding:10px 12px">${fanSVG(proj, spot, proj._stop, proj._t1, cfg.quarters)}</div>
+            <div class="horiz" style="margin-top:8px">${rows}${probs}</div>
             <div style="font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.5">
               <b>Model:</b> ${proj.method} The shaded areas are where price lands in 50% (dark) and 90% (light) of scenarios.
-              If P(hit Stop) is higher than P(Target before Stop), the trade math is against you — skip it.
+              If P(hit Stop) is higher than P(TP before Stop), the trade math is against you — skip it.
             </div>
           </div>`;
       }
@@ -906,8 +984,9 @@
 
       function tradePlan(s, verdict) {
         const atr = s.ATR, c = s.close;
-        const entryLow = verdict.kind === 'buy' ? Math.max(s.EMA20, c - 0.5 * atr) : s.EMA20;
-        const entryHigh = verdict.kind === 'buy' ? c : s.EMA50 > s.EMA20 ? s.EMA50 : s.EMA20 * 1.01;
+        let a = verdict.kind === 'buy' ? Math.max(s.EMA20, c - 0.5 * atr) : s.EMA20;
+        let b = verdict.kind === 'buy' ? c : s.EMA50 > s.EMA20 ? s.EMA50 : s.EMA20 * 1.01;
+        const entryLow = Math.min(a, b), entryHigh = Math.max(a, b);
         const entry = (entryLow + entryHigh) / 2;
         const stop = entry - 1.5 * atr;
         const risk = entry - stop;
@@ -1095,6 +1174,8 @@
           </table>`;
         document.querySelectorAll('#radar-body [data-open]').forEach((el) =>
           el.addEventListener('click', () => setSymbol(el.dataset.open)));
+        document.getElementById('radar-sub').textContent =
+          `All markets scored 0–100 on the ${tfc().label} timeframe · click a row to open it`;
         return rows;
       }
 
@@ -1169,21 +1250,25 @@
           body.innerHTML = '<div class="q-loading">No scanner data for ' + SYMBOL + ' — try another symbol.</div>';
           return;
         }
+        const cfg = tfc();
         const sc = scoreSnapshot(s);
         const verdict = verdictOf(sc, s);
+        verdict.label = verdict.label.replace('SWING', cfg.style);
         const plan = tradePlan(s, verdict);
-        const metrics = klines ? seriesMetrics(klines.map((k) => k.c)) : null;
+        const varWindow = Math.max(4, Math.round(cfg.projBars / 4));
+        const metrics = klines ? seriesMetrics(klines.map((k) => k.c), cfg.barsPerYear, varWindow) : null;
         const proj = klines
-          ? mcProjection(klines.map((k) => k.c), s.close, plan.stop, plan.t1, SYMBOL)
-          : gbmProjection(s.close, s['Volatility.M'], plan.stop, plan.t1);
+          ? mcProjection(klines.map((k) => k.c), s.close, plan.stop, plan.t1, SYMBOL, cfg.projBars, cfg.barName)
+          : gbmProjection(s.close, s.ATR, s['Volatility.M'], plan.stop, plan.t1, cfg.projBars, cfg.barName);
         proj._stop = plan.stop; proj._t1 = plan.t1;
-        const horizons = klines
+        const horizons = TF === '1D' && klines
           ? horizonReturns(klines.map((k) => k.c))
           : [
               ['1D', s.change], ['1W', s['Perf.W']], ['1M', s['Perf.1M']],
               ['3M', s['Perf.3M']], ['6M', s['Perf.6M']], ['YTD', s['Perf.YTD']], ['1Y', s['Perf.Y']],
             ];
         const regime = macroRegime(scan);
+        const ema200Daily = s.d_EMA200 ?? s.EMA200;
 
         const scoreColor = sc.total >= 70 ? 'var(--up)' : sc.total >= 55 ? 'var(--warn)' : sc.total >= 40 ? '#5a6273' : 'var(--down)';
         const trendRegime =
@@ -1191,11 +1276,14 @@
           : s.close > s.EMA200 ? 'Above 200-EMA (long-term intact)'
           : s.close < s.EMA20 && s.EMA20 < s.EMA50 && s.EMA50 < s.EMA200 ? 'Strong downtrend (inverted EMAs)'
           : 'Below 200-EMA (long-term broken)';
-        const investLine = s['Perf.6M'] >= 0 && s.close > s.EMA200
-          ? '<b style="color:var(--up)">Invest: OK to DCA</b> — long-term trend intact (above 200-EMA, positive 6M).'
-          : s.close > s.EMA200
-            ? '<b style="color:var(--warn)">Invest: careful</b> — above 200-EMA but 6-month momentum negative; DCA slowly.'
-            : '<b style="color:var(--down)">Invest: falling knife</b> — below the 200-EMA. Waiting for it to reclaim that line costs you a little upside and saves you a lot of pain.';
+        const investLine = s['Perf.6M'] >= 0 && s.close > ema200Daily
+          ? '<b style="color:var(--up)">Invest: OK to DCA</b> — long-term trend intact (above the daily 200-EMA, positive 6M).'
+          : s.close > ema200Daily
+            ? '<b style="color:var(--warn)">Invest: careful</b> — above the daily 200-EMA but 6-month momentum negative; DCA slowly.'
+            : '<b style="color:var(--down)">Invest: falling knife</b> — below the daily 200-EMA. Waiting for it to reclaim that line costs you a little upside and saves you a lot of pain.';
+        const tfNote = s._tfFallback
+          ? `<div style="margin-top:8px;font-size:11.5px;color:var(--warn)">Note: no ${cfg.label} data for this market on the free feed — indicators shown are daily.</div>`
+          : '';
 
         const horizonCells = horizons.map(([lab, v]) =>
           `<div class="h-cell"><div class="lab">${lab}</div><div class="val num ${clsPct(v)}">${fmtPct(v)}</div></div>`).join('');
@@ -1206,7 +1294,7 @@
           ['MACD (trend signal)', s['MACD.macd'] > s['MACD.signal'] ? 'Bullish cross' : 'Bearish cross', 'momentum ' + (s['MACD.macd'] > s['MACD.signal'] ? 'building up' : 'fading')],
           ['Trend health', trendRegime.split(' (')[0], trendRegime.includes('(') ? trendRegime.split(' (')[1].replace(')', '') : ''],
           ['ADX (trend strength)', s.ADX?.toFixed(1), s.ADX >= 25 ? 'Real trend in motion' : s.ADX >= 20 ? 'Trend developing' : 'Choppy — no clear trend'],
-          ['ATR (daily wiggle)', fmtPrice(s.ATR), 'moves ~' + (s.ATR / s.close * 100).toFixed(1) + '% per day'],
+          ['ATR (typical move)', fmtPrice(s.ATR), 'moves ~' + (s.ATR / s.close * 100).toFixed(2) + '% per ' + cfg.barName + ' bar'],
           ['52-week position', (sc.pos * 100).toFixed(0) + '%', `${fmtPrice(s.price_52_week_low)} – ${fmtPrice(s.price_52_week_high)}`],
           ['Bollinger position', (bbPos * 100).toFixed(0) + '%', bbPos > 0.85 ? 'Stretched high' : bbPos < 0.15 ? 'At the lows' : 'Middle of range'],
           ['Crowd signal (TV)', s['Recommend.All'] > 0.3 ? 'BUY' : s['Recommend.All'] > 0.1 ? 'Lean buy' : s['Recommend.All'] < -0.3 ? 'SELL' : s['Recommend.All'] < -0.1 ? 'Lean sell' : 'NEUTRAL', 'TradingView community gauge'],
@@ -1219,8 +1307,8 @@
           ['Sortino ratio', metrics.sortino.toFixed(2), 'like Sharpe, but only counts drops'],
           ['Max drawdown (1Y)', metrics.maxDD.toFixed(1) + '%', 'worst fall from a peak'],
           ['Trend drift (regression)', fmtPct(metrics.regDriftAnn, 1) + '/yr', 'R² ' + metrics.r2.toFixed(2) + (metrics.r2 > 0.6 ? ' — strong trend' : metrics.r2 > 0.3 ? ' — moderate' : ' — mostly noise')],
-          ['1-week VaR (95%)', fmtPct(metrics.var95, 1), 'a 1-in-20 bad week looks like this'],
-          ['Weekly win rate', metrics.winWeeks.toFixed(0) + '%', 'share of weeks that ended green'],
+          ['VaR 95% per ' + cfg.quarters[0], fmtPct(metrics.var95, 1), 'a 1-in-20 bad stretch looks like this'],
+          [cfg.quarters[0] + ' win rate', metrics.winWeeks.toFixed(0) + '%', 'share of ' + cfg.quarters[0] + ' windows that ended green'],
           ['Autocorrelation', metrics.acf1.toFixed(3), metrics.acf1 > 0.05 ? 'moves tend to continue' : metrics.acf1 < -0.05 ? 'moves tend to reverse' : 'close to a coin flip'],
         ].map(([lab, val, hint]) =>
           `<div class="t-cell"><div class="lab">${lab}</div><div class="val num">${val}</div><div class="hint">${hint}</div></div>`).join('') : '';
@@ -1244,24 +1332,25 @@
               <div class="num" style="font-size:12px;color:var(--muted)">Score <b style="color:${scoreColor}">${sc.total}/100</b>
                 — trend ${sc.trend}/35 · momentum ${sc.mom}/25 · strength ${sc.qual}/20 · position ${sc.posScore}/20</div>
               <div class="q-simple" style="border-left-color:${VERDICT_COLOR[verdict.kind]}">${SIMPLE_TERMS[verdict.kind]}</div>
-              <div class="q-reason">${trendRegime}. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
+              <div class="q-reason">${trendRegime} on the ${cfg.label} timeframe. RSI ${s.RSI?.toFixed(0)}, ADX ${s.ADX?.toFixed(0)},
                 ${fmtPct(s['Perf.W'])} this week, ${fmtPct(s['Perf.1M'])} this month.
                 At ${(sc.pos * 100).toFixed(0)}% of its 52-week range.</div>
               <div class="q-invest">${investLine}</div>
+              ${tfNote}
             </div>
 
             <div class="q-card">
-              <h3>Trade plan (swing · 2–6 weeks)</h3>
+              <h3>Trade plan — ${cfg.hold}</h3>
               <div class="plan-grid num">
                 <div><div class="lab">Entry zone</div><div class="val">${fmtPrice(plan.entryLow)} – ${fmtPrice(plan.entryHigh)}</div></div>
-                <div><div class="lab">Stop loss (1.5×ATR)</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
-                <div><div class="lab">Target 1 (1.5R) — sell half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
-                <div><div class="lab">Target 2 (2.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
+                <div><div class="lab">Stop loss (1.5× ${cfg.label} ATR)</div><div class="val" style="color:var(--down)">${fmtPrice(plan.stop)}</div></div>
+                <div><div class="lab">Take profit 1 (1.5R) — sell half</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t1)}</div></div>
+                <div><div class="lab">Take profit 2 (2.5R)</div><div class="val" style="color:var(--up)">${fmtPrice(plan.t2)}</div></div>
               </div>
-              <div class="plan-note"><b>Exit rules:</b> stop hit → sell, no debate, no averaging down. At Target 1 sell half and move your stop to entry (now you can’t lose).
-                Daily close below the 50-day line (${fmtPrice(s.EMA50)}) → exit the swing. RSI above 75 → take some profit.
-                ${verdict.kind === 'wait' ? '<b>Trigger to enter:</b> a daily close back above the 20-day line (' + fmtPrice(s.EMA20) + ').' : ''}
-                ${verdict.kind === 'avoid' ? '<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the 200-day line (' + fmtPrice(s.EMA200) + ').</b>' : ''}</div>
+              <div class="plan-note"><b>Exit rules:</b> stop hit → sell, no debate, no averaging down. At TP1 sell half and move your stop to entry (now you can’t lose).
+                A ${cfg.barName} close below the ${cfg.label} EMA-50 (${fmtPrice(s.EMA50)}) → exit the trade. RSI above 75 → take some profit.
+                ${verdict.kind === 'wait' ? `<b>Trigger to enter:</b> a ${cfg.barName} close back above the ${cfg.label} EMA-20 (` + fmtPrice(s.EMA20) + ').' : ''}
+                ${verdict.kind === 'avoid' ? `<b style="color:var(--down)">No long setup. First sign worth watching: price reclaiming the ${cfg.label} EMA-200 (` + fmtPrice(s.EMA200) + ').</b>' : ''}</div>
             </div>
 
             <div class="q-card">
@@ -1289,7 +1378,7 @@
           </div>
 
           ${metrics ? `<div>
-            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Econometrics (400 daily candles)</h3>
+            <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--subtle)">Econometrics (${klines.length} × ${cfg.barName} candles)</h3>
             <div class="tech-grid">${econCells}</div>
           </div>` : ''}
 
@@ -1351,7 +1440,7 @@
           const isCrypto = /^BINANCE:.*(USDT|USDC|FDUSD)$/.test(SYMBOL);
           const [scan, klines] = await Promise.all([
             scanGlobal(tickers),
-            isCrypto ? binanceKlines(SYMBOL).catch(() => null) : Promise.resolve(null),
+            isCrypto ? binanceKlines(SYMBOL, tfc().binance).catch(() => null) : Promise.resolve(null),
           ]);
           if (seq !== liveSeq) return;
 
@@ -1406,6 +1495,29 @@
         });
       }
 
+      function buildTfSeg() {
+        const host = document.getElementById('tf-seg');
+        host.innerHTML = '';
+        for (const [key, cfg] of Object.entries(TF_CONFIG)) {
+          const b = document.createElement('button');
+          b.textContent = cfg.label; b.dataset.tf = key; b.title = cfg.hold;
+          b.addEventListener('click', () => setTF(key));
+          host.appendChild(b);
+        }
+        syncTfSeg();
+      }
+      function syncTfSeg() {
+        document.querySelectorAll('#tf-seg button').forEach((b) =>
+          b.classList.toggle('active', b.dataset.tf === TF));
+        document.getElementById('tf-hold').textContent = tfc().hold;
+      }
+      function setTF(tf) {
+        if (!TF_CONFIG[tf] || tf === TF) return;
+        TF = tf; persist(); syncTfSeg();
+        renderChart(); renderTA();
+        refreshLive();
+      }
+
       const SUN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>';
       const MOON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
       function applyTheme() {
@@ -1429,6 +1541,7 @@
       });
 
       buildChips();
+      buildTfSeg();
       applyTheme();
       renderAllWidgets();
       refreshLive();
